@@ -4,6 +4,7 @@
 const sidebars = {
   docsSidebar: [
     'quick-start',
+    'core-features',
     'guides',
     'api-reference',
   ],

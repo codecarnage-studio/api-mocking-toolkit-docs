@@ -52,7 +52,11 @@ const config = {
 
 		themeConfig: {
 	    navbar: {
-	      title: 'API Mocking Toolkit',
+		      title: 'API Mocking Toolkit',
+		      logo: {
+		        alt: 'Code Carnage',
+		        src: 'img/codecarnage-logo.png',
+		      },
 	      items: [
         {
           type: 'doc',

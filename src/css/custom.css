@@ -2,4 +2,49 @@
  * This file is referenced from docusaurus.config.js.
  */
 
-/* Placeholder: add branding/theme overrides here. */
+/* Brand colors inspired by Odin Inspector */
+:root {
+  --ifm-color-primary: #f56641; /* bright inspector orange */
+  --ifm-color-primary-dark: #d94d2d;
+  --ifm-color-primary-darker: #b63f25;
+  --ifm-color-primary-light: #ff7d59;
+  --ifm-color-primary-lighter: #ff9a7a;
+
+  /* Second accent: darker reddish tone */
+  --ifm-color-secondary: #702a26;
+}
+
+/* Layout for hero/homepage buttons so they don't look squished */
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Secondary buttons: dark reddish brand color */
+.button.button--secondary {
+  color: #fff;
+  background-color: var(--ifm-color-secondary);
+  border-color: var(--ifm-color-secondary);
+}
+
+.button.button--secondary:hover {
+  background-color: #8a342f;
+  border-color: #8a342f;
+}
+
+.video-timestamp-link {
+  border: none;
+  background: none;
+  color: var(--ifm-color-primary);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.5rem;
+}
+
+.video-timestamp-link:hover {
+  text-decoration: underline;
+}
+

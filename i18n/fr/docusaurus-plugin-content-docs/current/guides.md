@@ -8,7 +8,7 @@ sidebar_position: 2
 
 ---
 
-## 🎥 Cas d'utilisation avancés (10 minutes)
+## 🎥 Cas d'utilisation avancés
 
 **Découvrez des flux de travail réels en action :**
 
@@ -20,7 +20,7 @@ sidebar_position: 2
 
 ## Table des matières
 
-- [Flux de développement](#development-workflow)
+- [Flux de développement](#flux-de-developpement)
 - [Tests et QA](#testing--qa)
 - [Prototyper des API](#prototyping-apis)
 - [Déboguer avec des sessions](#debugging-with-sessions)
@@ -29,7 +29,7 @@ sidebar_position: 2
 
 ---
 
-## Flux de développement
+## Flux de développement {#flux-de-developpement}
 
 Créez des jeux Unity sans attendre que le backend soit prêt.
 

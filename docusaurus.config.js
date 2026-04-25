@@ -9,8 +9,7 @@ const config = {
   url: 'https://api-mocking-toolkit.codecarnage.com',
   baseUrl: '/',
   baseUrlIssueBanner: false,
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+	onBrokenLinks: 'throw',
   favicon: 'img/favicon.ico',
 
   organizationName: 'codecarnage-studio',
@@ -29,7 +28,7 @@ const config = {
 	    assetStoreUrl,
 	  },
 
-  presets: [
+	  presets: [
     [
       'classic',
       /** @type {import('@docusaurus/preset-classic').Options} */
@@ -43,9 +42,15 @@ const config = {
         },
       }),
     ],
-  ],
+	  ],
 
-	  themeConfig: {
+		markdown: {
+		  hooks: {
+		    onBrokenMarkdownLinks: 'warn',
+		  },
+		},
+
+		themeConfig: {
 	    navbar: {
 	      title: 'API Mocking Toolkit',
 	      items: [
@@ -74,9 +79,15 @@ const config = {
 	          type: 'localeDropdown',
 	          position: 'right',
 	        },
-      ],
-    },
-  },
+	      ],
+	    },
+	    // Limit per-page table of contents to top-level section headings (##)
+	    // so the right-hand sidebar doesn't list every Step/sub-heading.
+	    tableOfContents: {
+	      minHeadingLevel: 2,
+	      maxHeadingLevel: 2,
+	    },
+	  },
 };
 
 module.exports = config;

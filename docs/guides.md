@@ -8,7 +8,7 @@ sidebar_position: 2
 
 ---
 
-## 🎥 Watch Advanced Use Cases (10 Minutes)
+## 🎥 Watch Advanced Use Cases
 
 **See real-world workflows in action:**
 

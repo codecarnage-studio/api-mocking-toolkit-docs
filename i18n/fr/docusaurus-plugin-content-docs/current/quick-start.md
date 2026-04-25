@@ -8,30 +8,33 @@ sidebar_position: 1
 
 ---
 
-## 🎥 À regarder en premier (5 minutes)
+import VideoTimestamp from '@site/src/components/VideoTimestamp';
+
+## 🎥 À regarder en premier
 
 **Vous préférez la vidéo ? Regardez ce court tutoriel :**
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/YOUR_VIDEO_ID" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe
+  id="demo-video"
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/4aqx69E9T4A?enablejsapi=1"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+/>
 
 **Ou suivez le guide écrit ci‑dessous** ↓
 
 ---
 
-## Le problème que vous résolvez
+## Le problème que vous résolvez <VideoTimestamp seconds={30} label="Aller à la vidéo @ 0:30" />
 
-Vous développez un jeu Unity qui communique avec un serveur backend :
-- Système de connexion
-- Profils joueurs
-- Classements
-- Boutique / inventaire
-- Matchmaking multijoueur
+Vous développez un jeu Unity qui communique avec un serveur backend. Vous avez besoin au minimum de :
 
-**Mais voici le problème :**
-
-❌ **L'équipe backend n'est pas prête** – vous êtes bloqué, impossible de tester votre jeu
-❌ **Les tests sont pénibles** – erreurs difficiles à reproduire, besoin d'internet, tests instables
-❌ **Le développement est lent** – chaque changement nécessite une coordination avec le backend
+| Ce dont votre jeu a besoin              | Ce qui vous freine                                                                                      |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| <ul><li>Système de connexion</li><li>Profils joueurs</li><li>Classements</li><li>Boutique / inventaire</li><li>Matchmaking multijoueur</li></ul> | <ul><li>❌ **L'équipe backend n'est pas prête** – vous êtes bloqué, impossible de tester votre jeu</li><li>❌ **Les tests sont pénibles** – erreurs difficiles à reproduire, besoin d'internet, tests instables</li><li>❌ **Le développement est lent** – chaque changement nécessite une coordination avec le backend</li></ul> |
 
 **API Mocking Toolkit résout tout cela.** Faites tourner l'intégralité de votre jeu sans backend. Testez n'importe quel scénario. Travaillez complètement hors ligne.
 
@@ -39,7 +42,7 @@ Vous développez un jeu Unity qui communique avec un serveur backend :
 
 ## Ce que vous allez apprendre
 
-En 5 minutes, vous allez :
+Dans ce guide rapide, vous allez :
 1. ✅ Installer API Mocking Toolkit
 2. ✅ Lancer la scène de démo (et la voir fonctionner immédiatement !)
 3. ✅ Créer votre premier endpoint d'API simulée
@@ -49,52 +52,11 @@ En 5 minutes, vous allez :
 
 **Vous vous reconnaissez dans ces situations ?**
 
-### Scénario 1 : l'équipe backend est en retard
-
-Vous développez le client du jeu. L'équipe backend avait promis les API pour la semaine dernière. Vous attendez toujours.
-
-**Sans API Mocking Toolkit :**
-- ❌ Vous êtes bloqué
-- ❌ Impossible de tester votre interface utilisateur
-- ❌ Données factices codées en dur partout
-- ❌ Il faudra tout supprimer plus tard
-
-**Avec API Mocking Toolkit :**
-- ✅ Vous définissez vous‑même le contrat d'API
-- ✅ Vous construisez et testez entièrement votre jeu
-- ✅ Quand le backend est prêt, vous basculez simplement – c'est tout !
-
-### Scénario 2 : tester les cas limites
-
-Votre système de boutique doit gérer :
-- ✅ Succès (achat effectué)
-- ⚠️ Erreur (paiement échoué)
-- ⚠️ Timeout (réseau lent)
-- ⚠️ Réponse invalide (JSON mal formé)
-
-**Sans API Mocking Toolkit :**
-- ❌ Demander à l'équipe backend de simuler les erreurs
-- ❌ Espérer pouvoir reproduire le bug
-- ❌ Un réseau instable qui rend les tests peu fiables
-
-**Avec API Mocking Toolkit :**
-- ✅ Vous configurez tous les scénarios comme réponses
-- ✅ Vous les testez instantanément, autant de fois que nécessaire
-- ✅ 100 % reproductible
-
-### Scénario 3 : travailler hors ligne
-
-Vous êtes dans un avion. Ou dans un café sans wifi. Ou votre VPN d'entreprise est en panne.
-
-**Sans API Mocking Toolkit :**
-- ❌ Impossible d'exécuter votre jeu
-- ❌ Impossible d'avancer
-- ❌ Temps perdu
-
-**Avec API Mocking Toolkit :**
-- ✅ Le jeu peut tourner avec des API simulées
-- ✅ Vous continuez à coder et à tester même si le backend n'est pas disponible
-- ✅ Aucun accès réseau requis lorsque vous utilisez les mocks
+| Scénario                      | Sans API Mocking Toolkit                                                                                      | Avec API Mocking Toolkit                                                                                              |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| L'équipe backend est en retard | <ul><li>Bloqué, UI impossible à tester</li><li>Données factices partout</li><li>Gros refactoring à prévoir</li></ul> | <ul><li>Vous définissez le contrat d'API</li><li>Vous construisez/testez le client maintenant</li><li>Vous basculez sur le backend réel quand il est prêt</li></ul> |
+| Tester les cas limites        | <ul><li>Dépendance à l'équipe backend pour simuler les erreurs</li><li>Réseau instable</li><li>Bugs difficiles à reproduire</li></ul> | <ul><li>Vous configurez les réponses succès/erreur/timeout/invalide</li><li>Vous les rejouez instantanément autant de fois que nécessaire</li></ul>               |
+| Travailler hors ligne         | <ul><li>Le jeu ne tourne pas hors ligne ou sans VPN</li><li>Aucun progrès possible</li></ul>                   | <ul><li>Le jeu utilise uniquement des API simulées dans Unity</li><li>Vous continuez à travailler où que vous soyez</li></ul>                                    |
 
 **Ça vous parle ? Corrigeons ça.**
 
@@ -109,34 +71,27 @@ _Concept du diagramme (rendu plus tard en image statique)_ : votre jeu parle à
 
 ---
 
-4. ✅ Make your game work without a backend
+**Make your game work without a backend.**
 
-**No live backend required during development. Your game talks to mocked APIs running entirely inside Unity.**
+No live backend required during development. Your game talks to mocked APIs running entirely inside Unity.
 
 ---
 
 ## Installation
 
-### Option 1: Unity Package Manager (Recommended)
+### Asset Store
 
-1. Open Unity Package Manager: `Window > Package Manager`
-2. Click `+` → `Add package from git URL`
-3. Enter: `https://github.com/yourusername/api-mocking-toolkit.git`
-4. Click `Add`
-
-### Option 2: Asset Store
-
-1. Open Asset Store in Unity
-2. Search for "API Mocking Toolkit" or open the Asset Store page directly in your browser.
-3. Click `Import`
-4. Import all files
+1. Ouvrez l'Unity Asset Store
+2. Recherchez « API Mocking Toolkit » ou ouvrez directement la page de l'asset dans votre navigateur.
+3. Cliquez sur `Import`
+4. Importez tous les fichiers
 **Requirements:**
 - Unity 2021.3 or later
 - No external dependencies
 
 ---
 
-## Run the Demo Scene
+## Run the Demo Scene <VideoTimestamp seconds={60} label="Aller à la vidéo @ 1:00" />
 
 Follow these steps to run the included demo scene and verify that the toolkit is installed correctly:
 
@@ -194,14 +149,14 @@ Status: 200
 
 You just ran a fully functional game that makes API calls through `ApiClient`, receives responses, and handles data without depending on a live backend.
 
-✅ No backend team required during this stage of development
-✅ No network connection required while using only mocked APIs
-✅ Fast, predictable responses
-✅ Complete control over the data you test with
+- ✅ No backend team required during this stage of development
+- ✅ No network connection required while using only mocked APIs
+- ✅ Fast, predictable responses
+- ✅ Complete control over the data you test with
 
 ---
 
-## How It Works (1 Minute Explanation)
+## Comment ça marche <VideoTimestamp seconds={90} label="Aller à la vidéo @ 1:30" />
 
 **You might be wondering: "How does this work?"**
 
@@ -248,7 +203,7 @@ Same code works with:
 
 ---
 
-## Create Your First Endpoint (Your Turn!)
+## Create Your First Endpoint (Your Turn!) <VideoTimestamp seconds={120} label="Aller à la vidéo @ 2:00" />
 
 **Now for the real power: Mock YOUR game's API.**
 
@@ -333,7 +288,7 @@ public class ProfileTest : MonoBehaviour
 
 ---
 
-## Core Features (Deep Dive)
+## Core Features (Deep Dive) <VideoTimestamp seconds={150} label="Aller à la vidéo @ 2:30" />
 
 You've seen the basics. Now let's look at the **core features** that make API Mocking Toolkit powerful.
 

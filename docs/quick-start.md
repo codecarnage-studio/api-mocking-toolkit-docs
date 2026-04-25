@@ -2,36 +2,41 @@
 id: quick-start
 title: Quick Start
 sidebar_position: 1
+toc_max_heading_level: 3
 ---
 
 **Develop and test your game's API calls in Unity without waiting for backend services.**
 
 ---
 
-## 🎥 Watch First (5 Minutes)
+import VideoTimestamp from '@site/src/components/VideoTimestamp';
+import CodeBlock from '@theme/CodeBlock';
+
+## 🎥 Watch First
 
 **Prefer video? Watch this quick tutorial:**
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/YOUR_VIDEO_ID" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe
+  id="demo-video"
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/4aqx69E9T4A?enablejsapi=1"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+/>
 
 **Or follow the written guide below** ↓
 
 ---
 
-## The Problem You're Solving
+## The Problem You're Solving <VideoTimestamp seconds={30} label="Jump to video @ 0:30" />
 
-You're building a Unity game that talks to a backend server:
-- Login system
-- Player profiles
-- Leaderboards
-- Shop/inventory
-- Multiplayer matchmaking
+You're building a Unity game that talks to a backend server. At minimum, you need:
 
-**But here's the issue:**
-
-❌ **Backend team isn't ready yet** - You're blocked, can't test your game
-❌ **Testing is painful** - Hard to reproduce errors, need internet, flaky tests
-❌ **Development is slow** - Every change needs backend coordination
+| What your game needs                | What's getting in the way                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ |
+| <ul><li>Login system</li><li>Player profiles</li><li>Leaderboards</li><li>Shop/inventory</li><li>Multiplayer matchmaking</li></ul> | <ul><li>❌ **Backend team isn't ready yet** – You're blocked, can't test your game</li><li>❌ **Testing is painful** – Hard to reproduce errors, need internet, flaky tests</li><li>❌ **Development is slow** – Every change needs backend coordination</li></ul> |
 
 **API Mocking Toolkit solves this.** Run your entire game without a backend. Test any scenario. Work completely offline.
 
@@ -39,7 +44,7 @@ You're building a Unity game that talks to a backend server:
 
 ## What You'll Learn
 
-In 5 minutes, you'll:
+In this quick guide, you'll:
 1. ✅ Install API Mocking Toolkit
 2. ✅ Run the demo scene (see it working instantly!)
 3. ✅ Create your first mock API endpoint
@@ -49,51 +54,11 @@ In 5 minutes, you'll:
 
 **See yourself in these situations?**
 
-### Scenario 1: Backend Team Is Behind
-
-You're building the game client. Backend team promised APIs by last week. Still waiting.
-
-**Without API Mocking Toolkit:**
-- ❌ You're blocked
-- ❌ Can't test your UI
-- ❌ Using hardcoded fake data everywhere
-- ❌ Will need to rip it all out later
-
-**With API Mocking Toolkit:**
-- ✅ Define the API contract yourself
-- ✅ Build and test your game fully
-- ✅ When backend is ready, flip a switch - done!
-
-### Scenario 2: Testing Edge Cases
-
-Your shop system needs to handle:
-- ✅ Success (item purchased)
-- ⚠️ Error (payment failed)
-- ⚠️ Timeout (network slow)
-- ⚠️ Invalid response (malformed JSON)
-
-**Without API Mocking Toolkit:**
-- ❌ Ask backend team to simulate errors
-- ❌ Hope you can reproduce the bug
-- ❌ Flaky network makes tests unreliable
-
-**With API Mocking Toolkit:**
-- ✅ Configure all scenarios as responses
-- ✅ Test them instantly, repeatedly
-- ✅ 100% reproducible
-### Scenario 3: Working Offline
-
-You're on a plane. Or at a coffee shop with no wifi. Or your company VPN is down.
-
-**Without API Mocking Toolkit:**
-- ❌ Can't run your game
-- ❌ Can't make progress
-- ❌ Wasted time
-
-**With API Mocking Toolkit:**
-- ✅ Game can run using mocked APIs
-- ✅ Keep coding, keep testing even if the backend is not available
-- ✅ No network access required while using mocks
+| Scenario                | Without API Mocking Toolkit                                                                 | With API Mocking Toolkit                                                                                 |
+| ----------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Backend team is behind  | <ul><li>Blocked, UI untestable</li><li>Fake data everywhere</li><li>Big refactor later</li></ul> | <ul><li>You define the API contract</li><li>Build & test the client now</li><li>Switch to real backend when it's ready</li></ul> |
+| Testing edge cases      | <ul><li>Depend on backend team to simulate errors</li><li>Unstable network</li><li>Bugs hard to reproduce</li></ul> | <ul><li>Configure success/error/timeout/invalid responses yourself</li><li>Replay scenarios instantly as often as needed</li></ul> |
+| Working offline         | <ul><li>Game can’t run without network/VPN</li><li>Progress stalls</li></ul>                | <ul><li>Game uses only mocked APIs in Unity</li><li>Keep working wherever you are</li></ul>             |
 
 **Sound familiar? Let's fix it.**
 
@@ -108,24 +73,15 @@ _Diagram concept (to be rendered as a static image later):_ your game talks to t
 
 ---
 
-4. ✅ Make your game work without a backend
+**Make your game work without a backend.**
 
-**No live backend required during development. Your game talks to mocked APIs running entirely inside Unity.**
+No live backend required during development. Your game talks to mocked APIs running entirely inside Unity.
 
 ---
 
-## Installation
+## Installation (Unity Asset Store)
 
-### Option 1: Unity Package Manager (Recommended)
-
-1. Open Unity Package Manager: `Window > Package Manager`
-2. Click `+` → `Add package from git URL`
-3. Enter: `https://github.com/yourusername/api-mocking-toolkit.git`
-4. Click `Add`
-
-### Option 2: Asset Store
-
-1. Open Asset Store in Unity
+1. Open the Unity Asset Store
 2. Search for "API Mocking Toolkit" or open the Asset Store page directly in your browser.
 3. Click `Import`
 4. Import all files
@@ -135,38 +91,44 @@ _Diagram concept (to be rendered as a static image later):_ your game talks to t
 
 ---
 
-## Run the Demo Scene
+## Run the Demo Scene <VideoTimestamp seconds={60} label="Jump to video @ 1:00" />
 
 Follow these steps to run the included demo scene and verify that the toolkit is installed correctly:
 
-### Step 1: Open the Demo Scene
-
-Navigate to:
-```
-Assets > CodeCarnage > ApiMockingToolkit > Samples > DemoScene > DemoScene.unity
-```
-
-Double-click to open it.
-
-**What you'll see:**
-- A simple UI with two buttons: "Get Users" and "Get Posts"
-- Request/Response panels showing API calls
-
-### Step 2: Press Play
-
-Hit the Play button. The scene runs.
-
-### Step 3: Click "Get Users"
-
-**What happens:**
-- Button sends API request to `jsonplaceholder.typicode.com/users`
-- API Mocking Toolkit intercepts it
-- Returns mock user data **instantly**
-- No internet needed!
-
-You'll see:
-```
-REQUEST:
+<table className="steps-table">
+  <tbody>
+    <tr>
+      <td><strong>Step 1 – Open the demo scene</strong></td>
+      <td>
+        <p>
+          In Unity, open <code>Assets &gt; CodeCarnage &gt; ApiMockingToolkit &gt; Samples &gt; DemoScene &gt; DemoScene.unity</code>,
+          then double-click to open it.
+        </p>
+        <p><strong>What you'll see:</strong></p>
+        <ul>
+          <li>A simple UI with two buttons: <code>Get Users</code> and <code>Get Posts</code></li>
+          <li>Request/Response panels showing API calls</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Step 2 – Press Play</strong></td>
+      <td>
+        <p>Hit the Play button. The scene runs.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Step 3 – Click "Get Users"</strong></td>
+      <td>
+        <p><strong>What happens:</strong></p>
+        <ul>
+          <li>Button sends API request to <code>jsonplaceholder.typicode.com/users</code></li>
+          <li>API Mocking Toolkit intercepts it</li>
+          <li>Returns mock user data <strong>instantly</strong></li>
+          <li>No internet needed!</li>
+        </ul>
+        <p>Example request/response:</p>
+        <CodeBlock language="text">{`REQUEST:
 GET /users
 
 RESPONSE:
@@ -176,31 +138,40 @@ Status: 200
   "name": "Leanne Graham",
   "username": "Bret",
   ...
-}
-```
+}`}</CodeBlock>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Step 4 – Click "Get Posts" multiple times</strong></td>
+      <td>
+        <p><strong>Watch this:</strong></p>
+        <ul>
+          <li>First click → Returns page 1 of posts</li>
+          <li>Second click → Returns page 2 of posts</li>
+          <li>Third click → Returns page 3 of posts</li>
+          <li>Fourth click → Loops back to page 1</li>
+        </ul>
+        <p>
+          <strong>This is Response Strategies</strong> – API Mocking Toolkit cycles through different responses automatically,
+          which is useful for testing pagination and repeated calls.
+        </p>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-### Step 4: Click "Get Posts" Multiple Times
-
-**Watch this:**
-- First click → Returns page 1 of posts
-- Second click → Returns page 2 of posts
-- Third click → Returns page 3 of posts
-- Fourth click → Loops back to page 1
-
-**This is Response Strategies** – API Mocking Toolkit cycles through different responses automatically, which is useful for testing pagination and repeated calls.
-
-### What Just Happened?
+**What just happened?**
 
 You just ran a fully functional game that makes API calls through `ApiClient`, receives responses, and handles data without depending on a live backend.
 
-✅ No backend team required during this stage of development
-✅ No network connection required while using only mocked APIs
-✅ Fast, predictable responses
-✅ Complete control over the data you test with
+- ✅ No backend team required during this stage of development
+- ✅ No network connection required while using only mocked APIs
+- ✅ Fast, predictable responses
+- ✅ Complete control over the data you test with
 
 ---
 
-## How It Works (1 Minute Explanation)
+## How It Works <VideoTimestamp seconds={90} label="Jump to video @ 1:30" />
 
 **You might be wondering: "How does this work?"**
 
@@ -221,23 +192,21 @@ public async void OnGetUsersClicked()
 
 **That's it.** Standard API call. No magic.
 
-### The Magic Happens Here:
+Behind the scenes:
 
-1. **You configured an endpoint** (already done in Demo Scene)
-   - URL: `https://jsonplaceholder.typicode.com/users`
-   - Mock response: `[{user data...}]`
+- **You configured an endpoint** (already done in the demo scene)
+  - URL: `https://jsonplaceholder.typicode.com/users`
+  - Mock response: `[{user data...}]`
 
-2. **API Mocking Toolkit intercepts**
-   - Sees the URL matches your config
-   - Returns your mock data instead of hitting the real server
+- **API Mocking Toolkit intercepts**
+  - Sees the URL matches your config
+  - Returns your mock data instead of hitting the real server
 
-3. **Your code gets the response**
-   - Doesn't know it's mocked
-   - Works exactly like a real API
+- **Your code gets the response**
+  - Doesn't know it's mocked
+  - Works exactly like a real API
 
-### The Key Insight:
-
-**Your game code doesn't change.**
+**The key idea:** your game code doesn't change.
 
 Same code works with:
 - ✅ Mocked data (when API Mocking Toolkit is active)
@@ -247,7 +216,7 @@ Same code works with:
 
 ---
 
-## Create Your First Endpoint (Your Turn!)
+## Create Your First Endpoint (Your Turn!) <VideoTimestamp seconds={120} label="Jump to video @ 2:00" />
 
 **Now for the real power: Mock YOUR game's API.**
 
@@ -255,63 +224,51 @@ Imagine you're building an RPG. You need a player profile API, but the backend i
 
 **Let's build it anyway:**
 
-### Step 1: Open the API Mocking Toolkit Window
-
-In Unity menu bar:
-```
-Window > API Mocking Toolkit
-```
-
-A new window opens. This is your control center.
-
-### Step 2: Create an Endpoint
-
-See the **"+ Endpoint"** button? Click it.
-
-A form appears. Fill it in:
-
-**Name:** `Get User Profile`
-*(This is just for you - a friendly name)*
-
-**Method:** `GET`
-*(The HTTP method - GET, POST, PUT, DELETE)*
-
-**URL:** `https://api.mygame.com/user/profile`
-*(Your game's API endpoint - can be anything!)*
-
-**Match Type:** `Exact`
-*(URL must match exactly)*
-
-**Why these values?**
-- This endpoint will catch any `GET` request to `https://api.mygame.com/user/profile`
-- When your game calls this URL, API Mocking Toolkit will return your mock data
-
-### Step 3: Add Mock Response
-
-In the **Response** section:
-1. **Status Code:** 200
-2. **Body:**
-```json
-{
+<table className="steps-table">
+  <tbody>
+    <tr>
+      <td><strong>Step 1 – Open the API Mocking Toolkit window</strong></td>
+      <td>
+        In Unity, open <code>Window &gt; API Mocking Toolkit</code>. A new window opens—this is your control center. // FIXME: `Window>CodeCarnage>API Mocking Toolkit`, this is correct one. You missed the intermediate menu.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Step 2 – Create an endpoint</strong></td>
+      <td>
+        Click <strong>"+ Endpoint"</strong>. In the form, set:
+        <ul>
+          <li><strong>Name:</strong> <code>Get User Profile</code> (friendly name)</li>
+          <li><strong>Method:</strong> <code>GET</code></li>
+          <li><strong>URL:</strong> <code>https://api.mygame.com/user/profile</code></li>
+          <li><strong>Match Type:</strong> <code>Exact</code></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Step 3 – Add a mock response</strong></td>
+      <td>
+        <p>
+          In the <strong>Response</strong> section, set <strong>Status Code</strong> to <code>200</code> and use a JSON body like:
+        </p>
+        <CodeBlock language="json">{`{
   "id": 123,
   "username": "player1",
   "level": 42,
   "coins": 9999
-}
-```
-
-3. Click **Save**
-
-### Step 4: Enable Offline Mode
-
-Toggle **Offline Mode** ON (top of window)
-
-### Step 5: Test It!
-
-Create a test script:
-
-```csharp
-using UnityEngine;
+}`}</CodeBlock>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Step 4 – Enable Offline Mode</strong></td>
+      <td>
+        Toggle <strong>Offline Mode</strong> ON at the top of the window so the game uses mocked responses instead of the real backend.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Step 5 – Test it</strong></td>
+      <td>
+        <p>Create a test script:</p>
+        <CodeBlock language="csharp">{`using UnityEngine;
 using CodeCarnage.ApiMockingToolkit;
 
 public class ProfileTest : MonoBehaviour
@@ -321,18 +278,21 @@ public class ProfileTest : MonoBehaviour
         var response = await ApiClient.GetAsync(
             "https://api.mygame.com/user/profile"
         );
-        
+
         Debug.Log($"Status: {response.StatusCode}");
         Debug.Log($"Body: {response.Body}");
     }
-}
-```
+}`}</CodeBlock>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 **Run it!** You'll see your mock data in the console.
 
 ---
 
-## Core Features (Deep Dive)
+## Core Features (Deep Dive) <VideoTimestamp seconds={150} label="Jump to video @ 2:30" />
 
 You've seen the basics. Now let's look at the **core features** that make API Mocking Toolkit powerful.
 
@@ -485,56 +445,44 @@ Manage different backends and configs **without changing your game code**.
 
 #### Creating Environments
 
-1. `Window > API Mocking Toolkit`
+1. `Window > CodeCarnage > API Mocking Toolkit`
 2. Click **Environments** tab
 3. Add environments:
    - Development
    - Staging
    - Production
 
-	   Example environment layout (conceptual):
+Example environment layout (conceptual):
 
-	   - Each environment (Dev, QA, Prod EU, Prod NA) defines its own `baseUrl`.
-	   - `ApiClient` uses the active environment's `baseUrl` to build requests.
-	   - `ApiClient` can route requests either to mocked responses or the real backend.
+- Each environment (Dev, QA, Prod EU, Prod NA) defines its own `baseUrl`.
+- `ApiClient` uses the active environment's `baseUrl` to build requests.
+- `ApiClient` can route requests either to mocked responses or the real backend.
 
-	   Each environment provides its own variable values (like `baseUrl` or `region`), and the active environment controls how `{{baseUrl}}` and other variables resolve at runtime.
+Each environment provides its own variable values (like `baseUrl` or `region`), and the active environment controls how `{{baseUrl}}` and other variables resolve at runtime.
 
 #### Variable Interpolation
 
 Use `{{variableName}}` in URLs and response bodies.
 
-**Global Variables:**
-```text
-apiKey = abc123
-userId = player-001
-```
+**Variables at a glance:**
 
-**Environment Variables (Dev):**
-```text
-baseUrl = http://localhost:3000
-region  = us-west
-```
+| Scope   | Example variables                                           |
+| ------- | ----------------------------------------------------------- |
+| Global  | `apiKey = abc123`, `userId = player-001`                    |
+| Dev     | `baseUrl = http://localhost:3000`, `region = us-west`      |
+| Prod    | `baseUrl = https://api.mygame.com`, `region = us-east`     |
 
-**Environment Variables (Prod):**
-```text
-baseUrl = https://api.mygame.com
-region  = us-east
-```
+**URL template:**
 
-**URL with variables:**
 ```text
 {{baseUrl}}/user/{{userId}}/profile?key={{apiKey}}
 ```
 
-Resolved in Dev:
-```text
-http://localhost:3000/user/player-001/profile?key=abc123
-```
+**How it resolves:**
 
-Resolved in Prod:
 ```text
-https://api.mygame.com/user/player-001/profile?key=abc123
+Dev : http://localhost:3000/user/player-001/profile?key=abc123
+Prod: https://api.mygame.com/user/player-001/profile?key=abc123
 ```
 
 #### Variable Scope Priority
@@ -733,12 +681,13 @@ Export → Import → Export = Same file (round-trip safe)
 
 ### Error Simulation (Test Failure Paths Safely)
 
-Test error handling **without** breaking real backends.
+Test error and latency handling **without** breaking real backends.
 
-#### Simulating Errors
+#### Simulating Errors & Latency
 
 1. Add endpoint: `GET /api/data`  
-2. Add an error response:
+2. Add one or more error responses (4xx/5xx)  
+3. Optionally set **Latency** (for example 100 ms, 1 s, 5 s) on a response to simulate slow or timing‑out backends and to exercise loading bars, spinners, and other async UI behaviours.
 
 ```json
 {
@@ -747,13 +696,19 @@ Test error handling **without** breaking real backends.
 }
 ```
 
-Or configure multiple responses with a **Weighted** strategy:
+Or configure multiple responses (including different status codes and latencies) with a **Weighted** strategy:
 
 ```text
 Response 1 (Success 200)   - Weight: 80
 Response 2 (Error 500)     - Weight: 15
 Response 3 (Error 404)     - Weight: 5
 ```
+
+**Latency use cases:**
+
+- Make sure loading bars/spinners stay visible for the whole request and disappear only when a response arrives.
+- Test UX for **slow but successful** calls (e.g., show "Still loading…" or allow the player to cancel).
+- Simulate poor network conditions (mobile, Wi‑Fi drops) by mixing fast and slow responses in the same endpoint.
 
 #### Handling Errors in Code
 

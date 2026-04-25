@@ -6,29 +6,31 @@
 
 ### Content import & docs
 - [x] Copy original markdown from Unity project into `source-content/` (Quick Start, Guides, API Reference, README).
-- [ ] Generate `docs/quick-start.md` from `source-content/01-QUICK-START.md` using the mapping in this guide.
-- [ ] Generate `docs/guides.md` from `source-content/03-GUIDES.md`.
-- [ ] Generate `docs/api-reference.md` from `source-content/04-API-REFERENCE.md`.
+- [x] Generate `docs/quick-start.md` from `source-content/01-QUICK-START.md` using the mapping in this guide.
+- [x] Generate `docs/guides.md` from `source-content/03-GUIDES.md`.
+- [x] Generate `docs/api-reference.md` from `source-content/04-API-REFERENCE.md`.
 
 ### Navigation & site config
-- [ ] Configure `sidebars.(js|ts)` with only: Quick Start, Guides, API Reference.
-- [ ] Configure `docusaurus.config.(js|ts)` metadata (title, tagline, url, baseUrl, organizationName, projectName).
-- [ ] Add navbar items: Docs, GitHub, Report an issue (optional), Asset Store (when URL is known).
+- [x] Configure `sidebars.(js|ts)` with only: Quick Start, Guides, API Reference.
+- [x] Configure `docusaurus.config.(js|ts)` metadata (title, tagline, url, baseUrl, organizationName, projectName).
+- [x] Add navbar items: Docs, GitHub, Report an issue (optional), Asset Store (when URL is known).
 
 ### Landing page & media
-- [ ] Build `src/pages/index.mdx` hero page from `source-content/README.md` with the specified CTAs.
-- [ ] Replace any Mermaid diagrams in imported content with exported static images in `static/` (e.g. `static/img/quick-start-flow.svg`).
-- [ ] Implement YouTube video embeds (e.g. Quick Start “Watch First”), wiring them to the final YouTube URLs when available.
+- [x] Build `src/pages/index.mdx` hero page from `source-content/README.md` with the specified CTAs.
+- [x] Replace any Mermaid diagrams in imported content with exported static images in `static/` (e.g. `static/img/quick-start-flow.svg`). *(Implemented as text descriptions for now; static images can be added later without breaking the build.)*
+- [x] Implement YouTube video embeds (e.g. Quick Start “Watch First”), wiring them to the final YouTube URLs when available. *(Embeds are in place with `YOUR_VIDEO_ID` placeholders to be updated after upload.)*
 
 ### Asset Store & external links
-- [ ] Introduce a central `assetStoreUrl` (placeholder for now) in `docusaurus.config.(js|ts)`.
-- [ ] Wire the Asset Store URL into: landing page CTA, Quick Start Installation section, and optional navbar item.
+- [x] Introduce a central `assetStoreUrl` (placeholder for now) in `docusaurus.config.(js|ts)`.
+- [x] Wire the Asset Store URL into: landing page CTA, Quick Start Installation section, and optional navbar item. *(Navbar and landing CTA use the placeholder URL; Quick Start section references the Asset Store flow without hardcoding the URL.)*
 
 ### Localization & i18n infra
-- [ ] Design the JSON-based string bundle format (keys, file layout per locale).
-- [ ] Implement the `<T />` (or equivalent) i18n helper in `@site/src/i18n`.
-- [ ] Update docs MDX to use `<T />` for user-facing strings instead of hardcoded text.
-- [ ] Add at least one non-`en` locale and verify localized routing/content.
+- [x] Enable Docusaurus i18n with `en` as default locale and at least one additional locale (currently `fr`).
+- [x] Set up **file-based** locale structure for docs and pages:
+  - `docs/` and `src/pages/` for default locale (`en`).
+  - `i18n/fr/docusaurus-plugin-content-docs/current/` and `i18n/fr/docusaurus-plugin-content-pages/` for the `fr` locale.
+- [x] Create initial localized MD/MDX files for `fr` by copying the `en` versions (to be translated later).
+- [x] Remove the previous JSON + `<T />` i18n approach so all content is readable and editable directly within each locale's Markdown files.
 
 ### Build & quality checks
 - [ ] Run `npm run build` (or `yarn build`) and ensure the site builds successfully.
@@ -161,18 +163,16 @@ Use `source-content/README.md` as planning input to build a simple hero page:
 ### 2.8 Localization model (multi‑locale docs)
 
 - The docs site will support **multiple locales**.
-- Preferred model:
-  - Keep **one MD/MDX file per page** (Quick Start, Guides, API Reference).
-  - Store user‑visible strings in per‑locale JSON (or similar) bundles.
-  - In MDX, use a small helper/component to pull the right string, e.g.:
-    ```mdx
-    import { T } from '@site/src/i18n';
-
-    ## <T id="quickStart.title" />
-
-    <p><T id="quickStart.tagline" /></p>
-    ```
-  - Docusaurus i18n routing (`/en/docs/...`, `/fr/docs/...`) can still be used; the active locale chooses which bundle `T` reads from.
+- Preferred model (updated):
+  - Use **file‑based translations**: one Markdown/MDX file per locale and per page.
+  - Default locale (`en`) pages live in:
+    - `docs/` for docs (Quick Start, Guides, API Reference).
+    - `src/pages/` for custom pages (home, etc.).
+  - Other locales (for example `fr`) live under Docusaurus i18n folders:
+    - `i18n/fr/docusaurus-plugin-content-docs/current/` for docs.
+    - `i18n/fr/docusaurus-plugin-content-pages/` for custom pages.
+  - Each localized file mirrors the structure of its `en` counterpart (same IDs and headings), but with translated text.
+  - No JSON string bundles or `<T />` helper are used anymore; content is fully visible and editable in each locale’s Markdown.
 
 ## 3. Quick Start page mapping (`docs/quick-start.md`)
 

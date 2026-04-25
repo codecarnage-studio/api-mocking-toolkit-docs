@@ -44,13 +44,23 @@ const config = {
     ],
 	  ],
 
-		markdown: {
-		  hooks: {
-		    onBrokenMarkdownLinks: 'warn',
-		  },
-		},
+			markdown: {
+			  hooks: {
+			    onBrokenMarkdownLinks: 'warn',
+			  },
+			},
 
-		themeConfig: {
+		plugins: [
+		  [
+		    '@docusaurus/plugin-google-gtag',
+		    {
+		      trackingID: 'G-7B6WKXNK7B',
+		      anonymizeIP: true,
+		    },
+		  ],
+		],
+
+			themeConfig: {
 	    navbar: {
 		      title: 'API Mocking Toolkit',
 		      logo: {

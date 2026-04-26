@@ -443,3 +443,224 @@ if (!response.Success)
 ```
 
 ✅ This lets you reliably test **all** your error paths.
+
+---
+
+## Capturing Live API Responses​
+⭐ **Bridge real APIs and mocked development** – Test against staging/production, capture exact responses, work offline.
+
+### The Problem​
+You want to test your game with real backend data, but:
+- ❌ Copy-pasting JSON from Postman is tedious
+- ❌ Manually formatting responses introduces errors
+- ❌ Backend changes require updating mocks manually
+- ❌ Headers and status codes get lost in translation
+
+### The Solution​
+Capture live API responses with one click and save them as mocks with full customization.
+
+### How It Works​
+
+**Step 1: Send Real Request**
+
+Configure your endpoint with the real backend URL and turn OFF Offline Mode:
+
+```
+Endpoint Configuration:
+• URL: https://staging-api.mygame.com/user/profile
+• Method: GET
+• Offline Mode: OFF (so request goes to real backend)
+```
+
+Click "Send" to make the actual API call.
+
+**Step 2: Capture Response**
+
+After receiving the response, click one of two buttons:
+- **"Save as Success Mock"** – Save as success response (status 2xx)
+- **"Save as Error Mock"** – Save as error response (status 4xx/5xx)
+
+A menu appears with three options:
+
+| Option | What It Does |
+|--------|--------------|
+| **Append as New Response...** | Adds this response to your existing list |
+| **Replace All Responses...** | Clears all responses and replaces with this one |
+| **Replace Response → [name]** | Replaces a specific existing response |
+
+**Step 3: Customize Before Saving**
+
+A customization window opens where you can edit:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Response Name** | Friendly identifier | "Staging User Profile" |
+| **Status Code** | HTTP status | 200, 404, 500 |
+| **Latency (ms)** | Simulated delay | 0, 100, 2000 |
+| **Body** | Response content (captured automatically) | `{"id": 123, "name": "..."}` |
+| **Headers** | Key-value pairs (captured automatically) | `Content-Type: application/json` |
+
+**Body/Headers Tabs:**
+- Switch between Body and Headers tabs
+- Headers are editable key-value pairs
+- Add/delete headers with buttons
+- All data pre-filled from the captured response
+
+**Step 4: Confirm**
+
+Click "Confirm" to save. The toolkit automatically:
+✅ Saves response to your endpoint's response list
+✅ Enables mock mode (so future requests use this mock)
+✅ Makes it ready to use immediately
+
+### Real-World Example​
+
+**Scenario:** You're building a leaderboard and want to test with real production data.
+
+```csharp
+// 1. Configure endpoint
+// URL: https://api.mygame.com/leaderboard/global
+// Offline Mode: OFF
+
+// 2. Make real request to production
+var response = await ApiClient.GetAsync(
+    "https://api.mygame.com/leaderboard/global"
+);
+
+// 3. In Unity Editor:
+//    • Click "Save as Success Mock"
+//    • Choose "Append as New Response..."
+//    • Name: "Production Leaderboard - Jan 2026"
+//    • Click Confirm
+
+// 4. Enable offline mode
+ApiGlobalConfig.Instance.OfflineMode = true;
+
+// 5. Now work offline with exact production data
+var cachedResponse = await ApiClient.GetAsync(
+    "https://api.mygame.com/leaderboard/global"
+);
+// Returns exact production response, no network call!
+```
+
+**Benefits:**
+- ✅ Exact production data for realistic testing
+- ✅ Work offline at conferences, on planes, anywhere
+- ✅ No copying/pasting or manual formatting
+- ✅ Captured headers ensure authenticity
+- ✅ Update anytime by capturing again
+
+### Use Cases​
+
+**1. Test Against Staging**
+- Capture staging responses with realistic test data
+- Work offline with exact staging environment
+- Switch back online when backend changes
+
+**2. Reproduce Production Bugs**
+- Capture the exact response that caused a bug
+- Debug locally without affecting production
+- Share captured response with team via version control
+
+**3. Error Scenario Library**
+- Trigger real errors (wrong password, rate limit, server error)
+- Capture each error response
+- Build a library of realistic error mocks
+- Use Response Strategies to mix success/error randomly
+
+**4. Performance Testing**
+- Capture large responses from production
+- Test UI with realistic data volumes
+- Measure rendering performance locally
+
+**5. Team Collaboration**
+- Capture responses from your staging environment
+- Export the collection
+- Share with team via Git
+- Everyone works with identical data
+
+### Variable Interpolation in Captured Responses​
+
+💡 **Tip:** The toolkit shows available variables below the request line:
+
+```
+💡 Available variables (12): {{baseUrl}}, {{apiKey}}, {{userId}}, {{region}}, ...
+```
+
+When you capture a response, you can **edit it to use variables** instead of hardcoded values:
+
+**Original Captured Response:**
+```json
+{
+  "server": "us-east-api.mygame.com",
+  "userId": 12345,
+  "apiKey": "prod-key-abc123"
+}
+```
+
+**After Editing to Use Variables:**
+```json
+{
+  "server": "{{region}}-api.mygame.com",
+  "userId": {{userId}},
+  "apiKey": "{{apiKey}}"
+}
+```
+
+**Why This Matters:**
+- Switch between environments (dev, staging, prod) without changing mocks
+- Personalize responses per environment
+- Keep sensitive data in environment variables, not in mocks
+
+**Variable Scopes:**
+Variables shown in the hint come from:
+1. **Global variables** – Available everywhere (e.g., `{{apiKey}}`)
+2. **Environment variables** – Specific to active environment (e.g., `{{baseUrl}}`)
+3. **Endpoint variables** – Specific to this endpoint (highest priority)
+
+See the [Environments & Variables](#environments--variables-dev--staging--prod) section for managing variables.
+
+### Confirmation Dialogs​
+
+To prevent accidental data loss, confirmation dialogs appear for destructive actions:
+
+**Replace All:**
+```
+⚠️ Confirm Replace All
+
+This will REPLACE ALL Success responses with this single new response.
+
+All existing 5 response(s) will be deleted.
+
+Are you sure?
+
+[Replace All]  [Cancel]
+```
+
+**Replace Specific:**
+```
+⚠️ Confirm Replace
+
+This will replace BOTH the body AND headers of "User Profile - Test Data".
+
+Are you sure?
+
+[Replace]  [Cancel]
+```
+
+### Tips & Best Practices​
+
+✅ **Name your responses descriptively**
+   Instead of "Response 1", use "User Profile - Premium Tier" or "Error - Invalid Token"
+
+✅ **Capture errors intentionally**
+   Trigger 401, 404, 500 errors on staging and capture them for your error library
+
+✅ **Use latency to test loading states**
+   Set latency to 2000ms (2 seconds) to test loading spinners and timeout handling
+
+✅ **Combine with Response Strategies**
+   Capture multiple responses, then use Sequential/Random/Weighted strategies to cycle through them
+
+✅ **Version control your collections**
+   Commit captured responses to Git so your team works with identical data

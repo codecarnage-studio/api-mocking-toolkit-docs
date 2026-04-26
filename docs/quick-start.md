@@ -32,13 +32,33 @@ import CodeBlock from '@theme/CodeBlock';
 
 ## The Problem You're Solving <VideoTimestamp seconds={30} label="Jump to video @ 0:30" />
 
-You're building a Unity game that talks to a backend server. At minimum, you need:
+You're building a Unity game that talks to a backend server. You need login systems, player profiles, leaderboards, shop/inventory, multiplayer matchmaking—but development is painful.
 
-| What your game needs                | What's getting in the way                                                                 |
-| ----------------------------------- | ------------------------------------------------------------------------------------------ |
-| <ul><li>Login system</li><li>Player profiles</li><li>Leaderboards</li><li>Shop/inventory</li><li>Multiplayer matchmaking</li></ul> | <ul><li>❌ **Backend team isn't ready yet** – You're blocked, can't test your game</li><li>❌ **Testing is painful** – Hard to reproduce errors, need internet, flaky tests</li><li>❌ **Development is slow** – Every change needs backend coordination</li></ul> |
+**See yourself in these situations?**
 
-**API Mocking Toolkit solves this.** Run your entire game without a backend. Test any scenario. Work completely offline.
+| Scenario                | Without API Mocking Toolkit                                                                 | With API Mocking Toolkit                                                                                 |
+| ----------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Backend team is behind  | <ul><li>Blocked, UI untestable</li><li>Fake data everywhere</li><li>Big refactor later</li></ul> | <ul><li>You define the API contract</li><li>Build & test the client now</li><li>Switch to real backend when it's ready</li></ul> |
+| Testing edge cases      | <ul><li>Depend on backend team to simulate errors</li><li>Unstable network</li><li>Bugs hard to reproduce</li></ul> | <ul><li>Configure success/error/timeout/invalid responses yourself</li><li>Replay scenarios instantly as often as needed</li></ul> |
+| Working offline         | <ul><li>Game can’t run without network/VPN</li><li>Progress stalls</li></ul>                | <ul><li>Game uses only mocked APIs in Unity</li><li>Keep working wherever you are</li></ul>             |
+| Capturing real API data | <ul><li>Copy-paste JSON from Postman/browser</li><li>Format manually</li><li>Keep updating when backend changes</li></ul> | <ul><li>Click "Send" → "Save as Mock"</li><li>Captured with exact headers, status, latency</li><li>Customize before saving</li><li>Work offline instantly</li></ul> |
+
+**Sound familiar? API Mocking Toolkit solves all of this.**
+
+Run your entire game without a backend API server. Test any scenario. Capture real API responses with one click. Work completely offline.
+
+**How it works:**
+
+Your game talks to the API Mocking Toolkit, which can route calls to:
+
+- **Real Backend** – Production or staging servers
+- **QA Server** – Testing environment
+- **Localhost** – Local development server
+- **Mock Responses** – Instant success/error responses with custom status codes, latency, and data
+
+![API Mocking Toolkit Routing](/img/diagram-amt-optimized.png)
+
+**↑ One tool, four ways to test** – Switch between real servers and mocks instantly
 
 ---
 
@@ -48,27 +68,6 @@ In this quick guide, you'll:
 1. ✅ Install API Mocking Toolkit
 2. ✅ Run the demo scene (see it working instantly!)
 3. ✅ Create your first mock API endpoint
-
-## Real Developer Scenarios
-
-**See yourself in these situations?**
-
-| Scenario                | Without API Mocking Toolkit                                                                 | With API Mocking Toolkit                                                                                 |
-| ----------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Backend team is behind  | <ul><li>Blocked, UI untestable</li><li>Fake data everywhere</li><li>Big refactor later</li></ul> | <ul><li>You define the API contract</li><li>Build & test the client now</li><li>Switch to real backend when it's ready</li></ul> |
-| Testing edge cases      | <ul><li>Depend on backend team to simulate errors</li><li>Unstable network</li><li>Bugs hard to reproduce</li></ul> | <ul><li>Configure success/error/timeout/invalid responses yourself</li><li>Replay scenarios instantly as often as needed</li></ul> |
-| Working offline         | <ul><li>Game can’t run without network/VPN</li><li>Progress stalls</li></ul>                | <ul><li>Game uses only mocked APIs in Unity</li><li>Keep working wherever you are</li></ul>             |
-
-**Sound familiar? Let's fix it.**
-
-_Diagram concept (to be rendered as a static image later):_ your game talks to the API Mocking Toolkit, which can in turn route calls to:
-
-- The real backend server
-- A local development server
-- A mocked success response
-- A mocked error response
-
-**↑ One tool, four ways to test** – real backend, local server, mock success, mock error
 
 ---
 

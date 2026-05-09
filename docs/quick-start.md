@@ -30,7 +30,7 @@ import CodeBlock from '@theme/CodeBlock';
 
 ---
 
-## The Problem You're Solving <VideoTimestamp seconds={30} label="Jump to video @ 0:30" />
+## The Problem You're Solving
 
 You're building a Unity game that talks to a backend server. You need login systems, player profiles, leaderboards, shop/inventory, multiplayer matchmaking—but development is painful.
 
@@ -43,13 +43,13 @@ You're building a Unity game that talks to a backend server. You need login syst
 | Working offline         | <ul><li>Game can’t run without network/VPN</li><li>Progress stalls</li></ul>                | <ul><li>Game uses only mocked APIs in Unity</li><li>Keep working wherever you are</li></ul>             |
 | Capturing real API data | <ul><li>Copy-paste JSON from Postman/browser</li><li>Format manually</li><li>Keep updating when backend changes</li></ul> | <ul><li>Click "Send" → "Save as Mock"</li><li>Captured with exact headers, status, latency</li><li>Customize before saving</li><li>Work offline instantly</li></ul> |
 
-**Sound familiar? API Mocking Toolkit solves all of this.**
+**Sound familiar? API Mocking Toolkit solves these.**
 
 Run your entire game without a backend API server. Test any scenario. Capture real API responses with one click. Work completely offline.
 
 **How it works:**
 
-Your game talks to the API Mocking Toolkit, which can route calls to:
+Your game talks to the API Mocking Toolkit, which can route calls to dedicated environments, like to a :
 
 - **Real Backend** – Production or staging servers
 - **QA Server** – Testing environment
@@ -58,7 +58,7 @@ Your game talks to the API Mocking Toolkit, which can route calls to:
 
 ![API Mocking Toolkit Routing](/img/diagram-amt-optimized.png)
 
-**↑ One tool, four ways to test** – Switch between real servers and mocks instantly
+**↑ One Game, with envts to test** – Switch between real servers and mocks instantly
 
 ---
 
@@ -68,12 +68,6 @@ In this quick guide, you'll:
 1. ✅ Install API Mocking Toolkit
 2. ✅ Run the demo scene (see it working instantly!)
 3. ✅ Create your first mock API endpoint
-
----
-
-**Make your game work without a backend.**
-
-No live backend required during development. Your game talks to mocked APIs running entirely inside Unity.
 
 ---
 
@@ -90,7 +84,7 @@ No live backend required during development. Your game talks to mocked APIs runn
 
 ---
 
-## Run the Demo Scene <VideoTimestamp seconds={60} label="Jump to video @ 1:00" />
+## Run the Demo Scene
 
 Follow these steps to run the included demo scene and verify that the toolkit is installed correctly:
 
@@ -170,7 +164,7 @@ You just ran a fully functional game that makes API calls through `ApiClient`, r
 
 ---
 
-## How It Works <VideoTimestamp seconds={90} label="Jump to video @ 1:30" />
+## How It Works
 
 **You might be wondering: "How does this work?"**
 
@@ -180,9 +174,8 @@ Let's peek under the hood. Open `DemoController.cs`:
 public async void OnGetUsersClicked()
 {
     // This is normal Unity HTTP code - nothing special!
-    var response = await ApiClient.GetAsync(
-        "https://jsonplaceholder.typicode.com/users"
-    );
+    // Variable interpolation: {{baseUrl}} resolves per active environment
+    var response = await ApiClient.Get("{{baseUrl}}/users");
 
     // Display the response in the UI
     DisplayResponse(response);
@@ -194,7 +187,8 @@ public async void OnGetUsersClicked()
 Behind the scenes:
 
 - **You configured an endpoint** (already done in the demo scene)
-  - URL: `https://jsonplaceholder.typicode.com/users`
+  - URL: `{{baseUrl}}/users` (the active environment supplies `baseUrl`,
+    e.g. `https://jsonplaceholder.typicode.com`)
   - Mock response: `[{user data...}]`
 
 - **API Mocking Toolkit intercepts**
@@ -215,13 +209,17 @@ Same code works with:
 
 ---
 
-## Create Your First Endpoint (Your Turn!) <VideoTimestamp seconds={120} label="Jump to video @ 2:00" />
+## Create Your First Endpoint (Your Turn!)
 
-**Now for the real power: Mock YOUR game's API.**
+**Now for the real power: Mock YOUR game's API, using a real public HTTP API as a stand‑in.**
 
-Imagine you're building an RPG. You need a player profile API, but the backend isn't ready yet.
+Imagine you're building an RPG and you want to let players leave feedback on a level.
+We'll use **JSONPlaceholder's `/comments` endpoint** as your "fake backend" so that:
 
-**Let's build it anyway:**
+- Offline Mode works with a **mocked response**, and
+- Online Mode can call a **real HTTP API** out-of-the-box (no custom server needed).
+
+**Let's build it:**
 
 <table className="steps-table">
   <tbody>
@@ -236,9 +234,9 @@ Imagine you're building an RPG. You need a player profile API, but the backend i
       <td>
         Click <strong>"+ Endpoint"</strong>. In the form, set:
         <ul>
-          <li><strong>Name:</strong> <code>Get User Profile</code> (friendly name)</li>
-          <li><strong>Method:</strong> <code>GET</code></li>
-          <li><strong>URL:</strong> <code>https://api.mygame.com/user/profile</code></li>
+          <li><strong>Name:</strong> <code>Create Comment</code> (friendly name)</li>
+          <li><strong>Method:</strong> <code>POST</code></li>
+          <li><strong>URL:</strong> <code>https://jsonplaceholder.typicode.com/comments</code></li>
           <li><strong>Match Type:</strong> <code>Exact</code></li>
         </ul>
       </td>
@@ -247,35 +245,53 @@ Imagine you're building an RPG. You need a player profile API, but the backend i
       <td><strong>Step 3 – Add a mock response</strong></td>
       <td>
         <p>
-          In the <strong>Response</strong> section, set <strong>Status Code</strong> to <code>200</code> and use a JSON body like:
+          In the <strong>Response</strong> section, set <strong>Status Code</strong> to <code>201</code> (Created)
+          and use a JSON body like:
         </p>
         <CodeBlock language="json">{`{
-  "id": 123,
-  "username": "player1",
-  "level": 42,
-  "coins": 9999
+  "id": 501,
+  "postId": 1,
+  "name": "Demo comment from Unity (mock)",
+  "email": "player@example.com",
+  "body": "This comment was returned from a mock, not the live API."
 }`}</CodeBlock>
       </td>
     </tr>
     <tr>
       <td><strong>Step 4 – Enable Offline Mode</strong></td>
       <td>
-        Toggle <strong>Offline Mode</strong> ON at the top of the window so the game uses mocked responses instead of the real backend.
+        Toggle <strong>Offline Mode</strong> ON at the top of the window so the game uses mocked responses
+        instead of calling the real JSONPlaceholder API.
       </td>
     </tr>
     <tr>
       <td><strong>Step 5 – Test it</strong></td>
       <td>
         <p>Create a test script:</p>
-        <CodeBlock language="csharp">{`using UnityEngine;
+        <CodeBlock language="csharp">{`using System.Collections.Generic;
+using UnityEngine;
 using CodeCarnage.ApiMockingToolkit;
 
 public class ProfileTest : MonoBehaviour
 {
     async void Start()
     {
-        var response = await ApiClient.GetAsync(
-            "https://api.mygame.com/user/profile"
+        var requestBody = "{\n" +
+                          "  \"postId\": 1,\n" +
+                          "  \"name\": \"Demo comment from Unity\",\n" +
+                          "  \"email\": \"player@example.com\",\n" +
+                          "  \"body\": \"This is a test comment created from API Mocking Toolkit.\"\n" +
+                          "}";
+
+        var headers = new Dictionary<string, string>
+        {
+            { "Content-Type", "application/json; charset=UTF-8" }
+        };
+
+        var response = await ApiClient.Post(
+            "https://jsonplaceholder.typicode.com/comments",
+            requestBody,
+            headers
         );
 
         Debug.Log($"Status: {response.StatusCode}");
@@ -320,5 +336,5 @@ public class ProfileTest : MonoBehaviour
 - Re-import the Samples folder from Package Manager
 
 **Need help?**
-- [Contact Support](/support) <!-- TODO: point to the real support/contact page when available -->
 - Check [Troubleshooting FAQ](/docs/api-reference#troubleshooting)
+- Email support: `support@codecarnage.com`

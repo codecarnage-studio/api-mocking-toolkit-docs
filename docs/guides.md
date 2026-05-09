@@ -88,7 +88,9 @@ Create endpoints in API Mocking Toolkit:
 }
 ```
 
-4. Use Weighted strategy: 90% success, 10% error
+4. Mix the success and error responses with a `Random` strategy, or script
+   them deterministically with `Sequential` (1st call success → 2nd call error
+   → loop). The toolkit doesn't ship a weighted strategy.
 
 **Step 3: Build Your UI**
 
@@ -97,7 +99,7 @@ public class LoginManager : MonoBehaviour
 {
     public async void OnLoginButtonClicked()
     {
-        var response = await ApiClient.PostAsync(
+        var response = await ApiClient.Post(
             "https://api.mygame.com/login",
             $"{{\"username\":\"{username}\",\"password\":\"{password}\"}}"
         );
@@ -134,10 +136,14 @@ When backend is ready:
 - Test error cases easily
 - Smooth transition to real API
 
-> **Build & security note (to finalize before 1.0):**
-> In development you typically enable Offline Mode and use mock collections so the game never talks to a live backend.
-> For production builds, the recommended pattern is to talk to real APIs and treat mocks as a dev‑only tool.
-> Before release, decide whether the interceptor and mock collections are excluded from production builds or simply disabled via configuration, and ensure no secrets (API keys, tokens) are stored in environment variables that ship with the game client.
+> **Build & security note:**
+> In development you typically enable Offline Mode and use mock collections
+> so the game never talks to a live backend. For production builds, talk to
+> real APIs and treat mocks as a dev-only tool — `ApiInterceptor`,
+> `SessionManager`, and other Editor-only types are wrapped in `#if
+> UNITY_EDITOR` and never compile into builds, and `BuildPreprocessor`
+> blocks any build with Offline Mode left on. Keep secrets (API keys,
+> tokens) out of environment variables that ship with the game client.
 ---
 
 ## Testing & QA
@@ -154,12 +160,17 @@ Create reproducible test scenarios without backend changes.
 
 ```
 Endpoint: GET /api/player/inventory
+Strategy: Random
 
-Response 1 (Success) - Weight: 70
-Response 2 (Timeout) - Status 408 - Weight: 10
-Response 3 (Server Error) - Status 500 - Weight: 10
-Response 4 (Auth Error) - Status 401 - Weight: 10
+Responses[]:        Success 200
+ErrorResponses[]:   Status 408 (timeout, latency 5000 ms)
+                    Status 500 (server error)
+                    Status 401 (auth error)
 ```
+
+> Each endpoint has a `SimulateError` toggle. When OFF, the toolkit picks
+> from `Responses[]`; when ON, it picks from `ErrorResponses[]`. Both lists
+> have their own strategy and loop flag.
 
 **Step 2: Run Automated Tests**
 
@@ -167,12 +178,12 @@ Response 4 (Auth Error) - Status 401 - Weight: 10
 [UnityTest]
 public IEnumerator TestInventoryErrorHandling()
 {
-    // Enable offline mode for controlled testing
-    ApiGlobalConfig.Instance.OfflineMode = true;
-    
+    // Enable offline mode in the toolkit window before running
+    // (Window > CodeCarnage > API Mocking Toolkit > Offline Mode)
+
     // Call API multiple times
     for (int i = 0; i < 20; i++) {
-        var response = await ApiClient.GetAsync("/api/player/inventory");
+        var response = await ApiClient.Get("/api/player/inventory");
         
         // Verify error handling works
         if (!response.Success) {
@@ -326,7 +337,11 @@ Update mock, see changes immediately!
 - Backend implements to spec
 - No miscommunication
 
-> **Note:** OpenAPI export focuses on the shape of your real API (paths, methods, URLs, and schemas). Mock‑only details such as specific example payloads, artificial latencies, and error distributions remain in your collections and are not included in the exported OpenAPI document.
+> **Note:** OpenAPI export is round-trip safe. Toolkit-specific details
+> (folder structure, response strategies, latencies, multiple example
+> responses, error responses) are preserved via `x-amt-*` vendor extensions
+> alongside the standard OpenAPI 3.0 paths/methods/schemas. Backend tooling
+> that doesn't recognize `x-amt-*` simply ignores those fields.
 
 ---
 
@@ -346,21 +361,29 @@ Tester can't reproduce it consistently.
 
 **Step 1: Enable Session Persistence**
 
+Toggle **Enable Session Persistence** on the `ApiGlobalConfig` asset (in the
+toolkit window or the Inspector). The flag is a serialized field, not a
+runtime setter:
+
 ```csharp
-// In Global Config
-ApiGlobalConfig.Instance.EnableSessionPersistence = true;
+var config = Resources.Load<ApiGlobalConfig>("ApiGlobalConfig");
+Debug.Log($"Persistence on: {config.EnableSessionPersistence}");
 ```
 
 **Step 2: Tester Plays**
 
-Tester plays normally. When crash occurs, session is auto-saved.
+Tester plays normally. When crash occurs, session is auto-saved on Play Mode
+exit. If the tester wants to capture a clean slice mid-session (e.g.,
+immediately after the crash, before unrelated requests pile up), they can hit
+the **Stop** button on the pulsing **REC** banner in the Sessions tab to flush
+the current session to disk without leaving Play Mode.
 
 **Step 3: Load Session**
 
 Developer loads the session:
 
 ```
-Window > API Mocking Toolkit > Sessions Tab
+Window > CodeCarnage > API Mocking Toolkit > Sessions Tab
 Select: session_crash_2026-04-20_15-30-00.json
 Click: Load Session
 ```
@@ -439,10 +462,14 @@ Share configurations across team members.
 
 ```bash
 # Add collection assets to git
-git add Assets/Resources/ApiEndpointCollection.asset
-git add Assets/Resources/Demo\ Scene\ Collection.asset
+git add Assets/CodeCarnage/ApiMockingToolkit/Editor/Resources/ApiEndpointCollection.asset
+git add Assets/CodeCarnage/ApiMockingToolkit/Editor/Resources/Demo\ Scene\ Collection.asset
 git commit -m "Add API mock configurations"
 ```
+
+> Collections live under `Assets/CodeCarnage/ApiMockingToolkit/Editor/Resources/`
+> by default so they can be loaded via `Resources.Load`. Move them only if
+> you keep them under some `Resources/` folder.
 
 **Step 2: Team Pulls**
 
@@ -513,7 +540,7 @@ The demo scene shows two buttons: "Get Users" and "Get Posts".
 public async void OnGetUsersClicked()
 {
     // Make API call
-    var response = await ApiClient.GetAsync(
+    var response = await ApiClient.Get(
         "https://jsonplaceholder.typicode.com/users"
     );
     
@@ -545,7 +572,7 @@ In Scene:
 ```csharp
 public async void OnGetCommentsClicked()
 {
-    var response = await ApiClient.GetAsync(
+    var response = await ApiClient.Get(
         "https://jsonplaceholder.typicode.com/comments"
     );
     UpdateUI(response);
@@ -584,27 +611,28 @@ Click "Get Posts" multiple times:
 
 ### Exercise 3: Add Error Simulation
 
-**Goal:** Mix success and error responses.
+**Goal:** Trigger error responses for the same endpoint on demand.
 
-**Step 1: Add Error Response**
+**Step 1: Add an Error Response**
+
+Open the endpoint and add an entry to **Error Responses[]**:
 
 ```
-Response 4 (Error):
 Status: 500
 Body: {"error": "Server error"}
-Weight: 10
 ```
 
-**Step 2: Update Weights**
+**Step 2: Pick a Strategy**
 
-```
-Response 1 (Page 1) - Weight: 30
-Response 2 (Page 2) - Weight: 30
-Response 3 (Page 3) - Weight: 30
-Response 4 (Error) - Weight: 10
-```
+Set **Error Response Strategy** to `Sequential` (or `Random` if you have
+multiple errors and want variety).
 
-**Step 3: Add Error Handling**
+**Step 3: Toggle Errors On**
+
+Flip **Simulate Error** ON for the endpoint. The interceptor will now serve
+from `ErrorResponses[]` instead of `Responses[]` until you toggle it back.
+
+**Step 4: Add Error Handling**
 
 ```csharp
 if (!response.Success) {
@@ -613,9 +641,11 @@ if (!response.Success) {
 }
 ```
 
-**Step 4: Test**
+**Step 5: Test**
 
-Click "Get Posts" many times. ~10% will show error!
+Click "Get Posts" with **Simulate Error** ON — every call returns the error.
+Toggle it OFF to go back to the normal pagination flow. To mix the two, keep
+both lists populated and flip the toggle from your test code.
 
 ---
 

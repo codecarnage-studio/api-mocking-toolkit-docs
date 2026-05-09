@@ -12,15 +12,40 @@ Each section below stands on its own. You can:
 
 ---
 
+## Editor Window Layout
+
+Open via `Window > CodeCarnage > API Mocking Toolkit`. The window has three top-level tabs and a resizable split layout.
+
+**Top-level tabs:**
+
+| Tab | Purpose |
+|-----|---------|
+| **Endpoints** | Browse collections + folders, edit a selected endpoint |
+| **Sessions** | Recorded Play Mode sessions, REC banner, replay |
+| **Environments** | EDITOR/BUILD environment selectors, variables, import/export |
+
+**Endpoint editor split panes (drag the dividers to resize, double-click to collapse):**
+
+- **Left pane** — collection picker, folder tree, endpoint list, **+ Endpoint** button.
+- **Right pane** — two grouped tabs:
+  - **Mock** — configure stored responses. Sub-tabs: **Success** (`Responses[]`) and **Error** (`ErrorResponses[]`). Each has further **Body** / **Headers** sub-tabs and a strategy + loop toggle.
+  - **Response** — live response viewer for the most recent **Send**. Sub-tabs: **Body** / **Headers**. Capture buttons live here (see [Capturing Live API Responses](#capturing-live-api-responses)).
+
+**Request panel** (above the right-pane tabs) holds method, URL, request **Headers** / **Body** sub-tabs, and the **Send** button. The variables hint chip below the URL lists every `{{variable}}` resolvable in the active environment.
+
+**Toolbar** (top of window) exposes: master **Enabled** toggle, **Offline Mode** toggle, active collection dropdown, and Import / Export buttons (OpenAPI 3.0 with `x-amt-*` round-trip).
+
+---
+
 ## Response Strategies (Pagination & Variations)
 
 When the same endpoint is called multiple times, you can control **which response** is returned on each call.
 
 Think of it like a playlist:
-- **Sequential** – Play in order, loop at the end
-- **RoundRobin** – Cycle through responses evenly
-- **Random** – Shuffle mode
-- **Weighted** – Some responses more likely than others
+- **Sequential** – Play in order; loop or stop at the end depending on the
+  endpoint's `LoopResponses` flag
+- **RoundRobin** – Cycle through responses forever
+- **Random** – Shuffle mode (uniform distribution)
 
 ### Real Example: Shop Pagination
 
@@ -80,13 +105,13 @@ Backend returns 30 items total, 10 per page.
 // Your game code
 for (int page = 1; page <= 5; page++)
 {
-    var response = await ApiClient.GetAsync("/api/shop/items");
+    var response = await ApiClient.Get("/api/shop/items");
     var data = JsonUtility.FromJson<ShopData>(response.Body);
 
     Debug.Log($"Page {page}: {data.items.Length} items");
 }
 
-// Output:
+// Output (with LoopResponses = true):
 // Page 1: 10 items (Response 1)
 // Page 2: 10 items (Response 2)
 // Page 3: 10 items (Response 3)
@@ -98,48 +123,69 @@ for (int page = 1; page <= 5; page++)
 
 ### Strategy Summary
 
-| Strategy      | Behavior                                    | Use Case                             |
-|--------------|---------------------------------------------|--------------------------------------|
-| Sequential   | 1 → 2 → 3 → 1 → 2 → 3                       | Pagination, multi-step flows         |
-| RoundRobin   | Evenly cycles 1 → 2 → 3 → 1 → 2 → 3         | Load-balancing simulations           |
-| Random       | Random response each call                   | Varied gameplay testing              |
-| Weighted     | Uses weights (e.g. 90% success, 10% error)  | Realistic success/error distributions|
+| Strategy      | Behavior                                                   | Use Case                            |
+|---------------|------------------------------------------------------------|-------------------------------------|
+| Sequential    | 1 → 2 → 3 → (loop or stop, per `LoopResponses`)            | Pagination, scripted flows          |
+| RoundRobin    | Evenly cycles 1 → 2 → 3 → 1 → 2 → 3 forever                | Load-balancing simulations          |
+| Random        | Uniform random response each call                          | Varied gameplay testing             |
 
 ```text
-Sequential:  1 → 2 → 3 → 1 → 2 → 3
-RoundRobin:  1 → 2 → 3 → 1 → 2 → 3
+Sequential:  1 → 2 → 3 → 1 → 2 → 3   (loops)
+RoundRobin:  1 → 2 → 3 → 1 → 2 → 3   (always cycles)
 Random:      2 → 1 → 3 → 2 → 2 → 1
-Weighted:    ✓ → ✓ → ✗ → ✓ → ✓ → ✓
 ```
+
+> Need a "mostly success, sometimes error" mix? Add multiple responses and use
+> `Random`, or split success/error responses across the endpoint's
+> `Responses[]` and `ErrorResponses[]` lists — the toolkit does not currently
+> ship a weighted strategy.
 
 ---
 
-## Offline Mode (Work Completely Offline)
+## Offline Mode & Per-Endpoint Mock Toggle
 
-Global toggle to mock **all** API calls, even when an endpoint isn’t configured.
+Two layers control mock vs real routing: the global **Offline Mode** switch on
+`ApiGlobalConfig`, and a per-endpoint **Mock Enabled** toggle (`UseMock`) on
+each `ApiEndpoint`.
 
 ### How It Works
 
-- **Offline Mode OFF (default):**
-  - Configured endpoints → Mock response
-  - Unconfigured endpoints → Real network request
+The interceptor evaluates these in order on every request:
 
-- **Offline Mode ON:**
-  - Configured endpoints → Mock response
-  - Unconfigured endpoints → Error (so you don’t accidentally hit real servers)
+1. **`ApiGlobalConfig.Enabled` OFF** (master switch) → toolkit bypassed, every
+   request goes to real backend.
+2. **`OfflineMode` ON** → every request is mocked (matched endpoint config used
+   if available; unmatched requests fail rather than hitting real servers).
+3. **`OfflineMode` OFF + matched endpoint + endpoint's `Mock Enabled` ON** →
+   mocked.
+4. **Anything else** (matched endpoint with `Mock Enabled` OFF, or unmatched
+   request) → real network request.
+
+### The `Mock Enabled` Toggle
+
+Each endpoint has a **Mock Enabled** toggle in the editor toolbar (`UseMock`
+field on `ApiEndpoint`). It lets you keep an endpoint configured while
+selectively routing it to the real backend — handy for capturing live
+responses, A/B comparing mock vs real, or switching individual endpoints over
+without flipping `OfflineMode`.
 
 ### Enable Offline Mode
 
 **In Editor:**
 ```text
-Window > API Mocking Toolkit
+Window > CodeCarnage > API Mocking Toolkit
 Toggle "Offline Mode" ON
 ```
 
-**In Code:**
+**In Code (read-only at runtime):**
 ```csharp
-ApiGlobalConfig.Instance.OfflineMode = true;
+var config = Resources.Load<ApiGlobalConfig>("ApiGlobalConfig");
+bool offline = config.OfflineMode;
 ```
+
+> `OfflineMode` is a serialized field on the `ApiGlobalConfig` asset. To
+> change it from an Editor script, use `SerializedObject` — see the
+> [API Reference](/docs/api-reference#apiglobalconfig).
 
 ### Use Cases
 
@@ -176,23 +222,23 @@ Use `{{variableName}}` in URLs and response bodies.
 
 **Variables at a glance:**
 
-| Scope   | Example variables                                           |
-| ------- | ----------------------------------------------------------- |
-| Global  | `apiKey = abc123`, `userId = player-001`                    |
-| Dev     | `baseUrl = http://localhost:3000`, `region = us-west`      |
-| Prod    | `baseUrl = https://api.mygame.com`, `region = us-east`     |
+| Scope   | Example variables                                                        |
+| ------- | ------------------------------------------------------------------------ |
+| Global  | `apiKey = abc123`, `userId = player-001`                                 |
+| Dev     | `baseUrl = http://localhost:3000`, `region = us-west`                   |
+| Prod    | `baseUrl = https://jsonplaceholder.typicode.com`, `region = us-east`    |
 
 **URL template:**
 
 ```text
-{{baseUrl}}/user/{{userId}}/profile?key={{apiKey}}
+{{baseUrl}}/users/{{userId}}?key={{apiKey}}
 ```
 
 **How it resolves:**
 
 ```text
-Dev : http://localhost:3000/user/player-001/profile?key=abc123
-Prod: https://api.mygame.com/user/player-001/profile?key=abc123
+Dev : http://localhost:3000/users/player-001?key=abc123
+Prod: https://jsonplaceholder.typicode.com/users/player-001?key=abc123
 ```
 
 ### Variable Scope Priority
@@ -208,8 +254,13 @@ Prod: https://api.mygame.com/user/player-001/profile?key=abc123
 EnvironmentManager.Instance.ActiveEnvironment = devEnvironment;
 
 // Same code, different URLs based on environment
-var response = await ApiClient.GetAsync("{{baseUrl}}/user/profile");
+var response = await ApiClient.Get("{{baseUrl}}/users/{{userId}}?key={{apiKey}}");
 ```
+
+> If a variable can't be resolved, the toolkit throws
+> `MissingEnvironmentVariableException` listing the available variables in
+> the active environment and the global scope — interpolation is strict, not
+> silent.
 
 ✅ No hardcoded URLs. Switch environments with a dropdown or one line of code.
 
@@ -217,52 +268,57 @@ var response = await ApiClient.GetAsync("{{baseUrl}}/user/profile");
 
 **⚠️ Important: Environment restrictions for production builds**
 
-The toolkit enforces strict rules when creating Unity builds to prevent accidentally deploying with the wrong environment configuration.
+The toolkit's `BuildPreprocessor` runs before every Unity build (`File >
+Build`) and refuses to build if the configuration is unsafe.
 
-**Radio Button UI:**
+**What it checks:**
 
-Each environment has a radio button (●) that controls whether it's allowed in production builds:
-- ✅ **One environment** must have the radio button selected (green fill)
-- ❌ **No other environments** can be selected at the same time
-- This is the environment that will be compiled into your production build
+1. `ApiGlobalConfig.OfflineMode` must be **OFF** — production builds may not
+   ship in mock-everything mode.
+2. `EnvironmentManager.BuildEnvironmentId` must point to a registered
+   environment. (If no build environment is set, the build still proceeds with
+   a warning — fine for projects that hardcode URLs and don't use
+   `{{variable}}` interpolation.)
+3. The currently `ActiveEnvironment` must match the build environment, so the
+   variables you tested with are the variables you ship.
+
+**Manage Environments dialog:**
+
+In `Window > CodeCarnage > API Mocking Toolkit > Manage Environments` you
+pick:
+
+- **EDITOR** dropdown — which environment is active right now (Play Mode).
+- **BUILD** dropdown — which environment will be compiled into Unity builds.
+
+Only one BUILD environment can be selected at a time; switching it just
+reassigns `BuildEnvironmentId`.
 
 **Play Mode vs Unity Build:**
 
 | Mode | Restriction | Purpose |
 |------|-------------|---------|
-| **Play Mode (▶️)** | None - use any environment | Local testing and development |
-| **Unity Build** | Exactly ONE environment with "Allow in Build" enabled | Production deployment safety |
+| **Play Mode (▶️)** | None — switch environments freely | Local testing and development |
+| **Unity Build** | OfflineMode OFF + EDITOR matches BUILD | Production deployment safety |
 
 **What happens if you don't follow the rules:**
 
-If you try to build (`File > Build`) without exactly one environment marked for builds:
-- ❌ Build fails with clear error message
-- ❌ Example: "Build failed: 3 environments are marked for builds. Only one is allowed."
-- ❌ Example: "Build failed: Active environment 'Development' is not marked for builds."
+The build fails with a `BuildFailedException` such as:
 
-**How to change which environment is used for builds:**
-
-1. Open "Manage Environments" dialog
-2. Click the radio button next to your production environment
-3. All other environments automatically become un-selected
-4. Only the selected environment will be compiled into Unity builds
-
-**Why this restriction exists:**
-
-- Prevents accidentally shipping dev/staging environment in production
-- Forces you to explicitly choose which environment to deploy
-- Ensures production builds only include production-safe variables
-- Protects against configuration mistakes that could expose dev servers
+- `Build failed: OfflineMode is enabled.`
+- `Build failed: '<BuildEnv>' is set as the build environment but no active
+  environment is selected.`
+- `Build failed: Active environment mismatch. Active='Development',
+  Build='Production'.`
 
 **Best Practice:**
 
 ```text
-Development   ○ (not for builds)  → baseUrl = http://localhost:3000
-Staging       ○ (not for builds)  → baseUrl = https://staging.api.mygame.com
-Production    ● (marked for builds) → baseUrl = https://api.mygame.com
+Development   (EDITOR while developing)   → baseUrl = http://localhost:3000
+Staging       (occasional EDITOR pick)    → baseUrl = https://staging.api.mygame.com
+Production    (BUILD environment, EDITOR before File > Build) → baseUrl = https://api.mygame.com
 ```
 
-Only "Production" will be included when you run `File > Build`.
+Only the selected BUILD environment ships when you run `File > Build`.
 
 ---
 
@@ -276,11 +332,13 @@ Keep hundreds of endpoints manageable with **Collections** and **Folders**.
 - One collection active at a time
 
 **Create a Collection:**
-```text
-Assets > Create > API Mocking Toolkit > API Endpoint Collection
-```
 
-Use the collection dropdown in the window to switch between them.
+Right-click in the Project window and pick `Create > Window > CodeCarnage >
+API Mocking Toolkit > Endpoint Collection`. The new asset can live anywhere
+under `Assets/`; the toolkit picks the active one by name via
+`ApiGlobalConfig.ActiveCollectionName`.
+
+Use the collection dropdown in the toolkit window to switch between them.
 
 ### Folders
 
@@ -316,24 +374,32 @@ Record all API requests during Play Mode, save them, and replay later.
 
 ### Recording
 
-1. Enable session persistence in Global Config  
-2. Enter Play Mode  
-3. All API calls are automatically recorded  
-4. Exit Play Mode → Session saved to disk
+1. Enable **Enable Session Persistence** on the `ApiGlobalConfig` asset
+   (toggle in the toolkit window, or in the Inspector)
+2. Enter Play Mode
+3. All API calls are automatically recorded
+4. Exit Play Mode → Session saved to disk under
+   `Application.persistentDataPath/ApiMockingToolkitSessions/`
 
-```csharp
-// Enable session persistence
-ApiGlobalConfig.Instance.EnableSessionPersistence = true;
+### REC Banner & Manual Stop
 
-// Set max sessions to keep
-ApiGlobalConfig.Instance.MaxSavedSessions = 20;
-```
+While a session is recording, the **Sessions** tab shows a pulsing red **REC**
+banner with a **Stop** button. Click **Stop** to end the current session
+immediately and flush it to disk without leaving Play Mode — useful when you
+want to slice a long Play Mode session into multiple smaller saved sessions
+(e.g., one per scenario or bug repro). The banner hides itself automatically
+when no session is active.
+
+> Sessions are **Editor-only**. The `SessionManager` type is not compiled into
+> standalone builds, and at most 1,000 sessions are kept on disk
+> (`Constants.SessionLimits.MaxSessions`); older files are pruned
+> automatically.
 
 ### Replaying
 
-1. `Window > API Mocking Toolkit > Sessions` tab  
-2. Select a past session  
-3. Click **Load Session**  
+1. `Window > CodeCarnage > API Mocking Toolkit > Sessions` tab
+2. Select a past session
+3. Click **Load Session**
 4. Review all requests/responses
 
 **Use Cases:**
@@ -349,7 +415,7 @@ Import/export OpenAPI (Swagger) specs for real collaboration.
 
 ### Importing
 
-1. `Window > API Mocking Toolkit`
+1. `Window > CodeCarnage > API Mocking Toolkit`
 2. Click **Import**
 3. Select `.json` or `.yaml` OpenAPI file
 4. Endpoints are created automatically
@@ -378,14 +444,20 @@ Imported: /users/{{userId}}/profile
 
 ### Exporting
 
-1. Configure endpoints in API Mocking Toolkit  
-2. Click **Export**  
-3. Save `.json` file  
+1. Configure endpoints in API Mocking Toolkit
+2. Click **Export**
+3. Save `.json` file
 4. Send to backend team – they implement to that spec
 
 ```text
 Export → Import → Export = Same file (round-trip safe)
 ```
+
+> Toolkit-specific data (folder structure, response strategies, latency,
+> multiple example responses, error responses) is preserved across a
+> round-trip via `x-amt-*` OpenAPI extensions. Backend tools that don't
+> understand these extensions just ignore them — the rest of the document is
+> standard OpenAPI 3.0.
 
 ---
 
@@ -406,12 +478,15 @@ Test error and latency handling **without** breaking real backends.
 }
 ```
 
-Or configure multiple responses (including different status codes and latencies) with a **Weighted** strategy:
+Or configure multiple responses with different status codes and latencies and
+let the toolkit pick one. Use the endpoint's `ErrorResponses[]` list together
+with a `Random` strategy to simulate occasional failures, or use `Sequential`
+to script a deterministic sequence:
 
 ```text
-Response 1 (Success 200)   - Weight: 80
-Response 2 (Error 500)     - Weight: 15
-Response 3 (Error 404)     - Weight: 5
+Responses[]:        Success 200 (latency 100 ms)
+ErrorResponses[]:   Error   500 (latency 1500 ms)
+                    Error   404 (latency 100 ms)
 ```
 
 **Latency use cases:**
@@ -423,7 +498,7 @@ Response 3 (Error 404)     - Weight: 5
 ### Handling Errors in Code
 
 ```csharp
-var response = await ApiClient.GetAsync("/api/data");
+var response = await ApiClient.Get("/api/data");
 
 if (!response.Success)
 {
@@ -476,9 +551,14 @@ Click "Send" to make the actual API call.
 
 **Step 2: Capture Response**
 
-After receiving the response, click one of two buttons:
-- **"Save as Success Mock"** – Save as success response (status 2xx)
-- **"Save as Error Mock"** – Save as error response (status 4xx/5xx)
+After receiving the response, the toolkit shows two capture buttons whose
+labels follow the active tab (Body or Headers):
+
+- Body tab → **"Save Body as Success Mock"** / **"Save Body as Error Mock"**
+- Headers tab → **"Save Headers as Success Mock"** / **"Save Headers as Error Mock"**
+
+"Success" routes the captured data into the endpoint's `Responses[]` list,
+"Error" routes it into `ErrorResponses[]`.
 
 A menu appears with three options:
 
@@ -510,7 +590,8 @@ A customization window opens where you can edit:
 
 Click "Confirm" to save. The toolkit automatically:
 ✅ Saves response to your endpoint's response list
-✅ Enables mock mode (so future requests use this mock)
+✅ Sets the endpoint's **Mock Enabled** toggle (`UseMock`) to ON, so future
+   requests to this endpoint use the captured mock instead of the real backend
 ✅ Makes it ready to use immediately
 
 ### Real-World Example​
@@ -523,21 +604,21 @@ Click "Confirm" to save. The toolkit automatically:
 // Offline Mode: OFF
 
 // 2. Make real request to production
-var response = await ApiClient.GetAsync(
+var response = await ApiClient.Get(
     "https://api.mygame.com/leaderboard/global"
 );
 
 // 3. In Unity Editor:
-//    • Click "Save as Success Mock"
+//    • Click "Save Body as Success Mock" (Body tab)
 //    • Choose "Append as New Response..."
 //    • Name: "Production Leaderboard - Jan 2026"
 //    • Click Confirm
 
-// 4. Enable offline mode
-ApiGlobalConfig.Instance.OfflineMode = true;
+// 4. Toggle Offline Mode ON in the toolkit window
+//    (Window > CodeCarnage > API Mocking Toolkit)
 
 // 5. Now work offline with exact production data
-var cachedResponse = await ApiClient.GetAsync(
+var cachedResponse = await ApiClient.Get(
     "https://api.mygame.com/leaderboard/global"
 );
 // Returns exact production response, no network call!
@@ -660,7 +741,8 @@ Are you sure?
    Set latency to 2000ms (2 seconds) to test loading spinners and timeout handling
 
 ✅ **Combine with Response Strategies**
-   Capture multiple responses, then use Sequential/Random/Weighted strategies to cycle through them
+   Capture multiple responses, then use Sequential / RoundRobin / Random
+   strategies to cycle through them
 
 ✅ **Version control your collections**
    Commit captured responses to Git so your team works with identical data

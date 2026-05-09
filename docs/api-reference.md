@@ -4,7 +4,7 @@ title: API Reference
 sidebar_position: 3
 ---
 
-Quick reference and code examples.
+Code reference and examples.
 
 ---
 
@@ -28,33 +28,23 @@ Quick reference and code examples.
 ```csharp
 using CodeCarnage.ApiMockingToolkit;
 
-// GET request
+// GET
 var response = await ApiClient.Get("https://api.example.com/data");
 
-// POST request (JSON body)
-var response = await ApiClient.Post(
-    "https://api.example.com/data",
-    "{\"key\":\"value\"}"
-);
+// POST
+var response = await ApiClient.Post("https://api.example.com/data", "{\"key\":\"value\"}");
 
-// PUT request
-var response = await ApiClient.Put(
-    "https://api.example.com/data/123",
-    "{\"key\":\"updated\"}"
-);
+// PUT
+var response = await ApiClient.Put("https://api.example.com/data/123", "{\"key\":\"updated\"}");
 
-// PATCH request
-var response = await ApiClient.Patch(
-    "https://api.example.com/data/123",
-    "{\"key\":\"patched\"}"
-);
+// PATCH
+var response = await ApiClient.Patch("https://api.example.com/data/123", "{\"key\":\"patched\"}");
 
-// DELETE request
+// DELETE
 var response = await ApiClient.Delete("https://api.example.com/data/123");
 ```
 
-All methods accept optional `headers` (`Dictionary<string, string>`) and a
-`CancellationToken`:
+All methods accept optional `headers` and `CancellationToken`:
 
 ```csharp
 var headers = new Dictionary<string, string> {
@@ -131,84 +121,28 @@ sessionManager.EndCurrentSession();
 
 ## ApiClient
 
-Static entry point. Editor-only requests are routed through `ApiInterceptor`;
-in standalone builds requests go to the real backend via `UnityWebRequest`.
+Static entry point. Editor: `ApiInterceptor` routes requests. Builds: `UnityWebRequest` to real backend.
 
 ### Methods
 
-#### Get
+#### Get / Post / Put / Patch / Delete
 
 ```csharp
-public static Task<ApiResponse> Get(
-    string url,
-    Dictionary<string, string> headers = null,
-    CancellationToken ct = default
-)
+public static Task<ApiResponse> Get(string url, Dictionary<string, string> headers = null, CancellationToken ct = default)
+public static Task<ApiResponse> Post(string url, string body, Dictionary<string, string> headers = null, CancellationToken ct = default)
+public static Task<ApiResponse> Put(string url, string body, Dictionary<string, string> headers = null, CancellationToken ct = default)
+public static Task<ApiResponse> Patch(string url, string body, Dictionary<string, string> headers = null, CancellationToken ct = default)
+public static Task<ApiResponse> Delete(string url, Dictionary<string, string> headers = null, CancellationToken ct = default)
 ```
 
 ```csharp
+// Examples
 var response = await ApiClient.Get("https://api.example.com/users/123");
-```
 
-#### Post
+var json = JsonUtility.ToJson(new LoginRequest { username = "user", password = "pass" });
+var response = await ApiClient.Post("https://api.example.com/login", json);
 
-```csharp
-public static Task<ApiResponse> Post(
-    string url,
-    string body,
-    Dictionary<string, string> headers = null,
-    CancellationToken ct = default
-)
-```
-
-```csharp
-var json = JsonUtility.ToJson(new LoginRequest {
-    username = "user",
-    password = "pass"
-});
-
-var response = await ApiClient.Post(
-    "https://api.example.com/login",
-    json
-);
-```
-
-#### Put
-
-```csharp
-public static Task<ApiResponse> Put(
-    string url,
-    string body,
-    Dictionary<string, string> headers = null,
-    CancellationToken ct = default
-)
-```
-
-#### Patch
-
-```csharp
-public static Task<ApiResponse> Patch(
-    string url,
-    string body,
-    Dictionary<string, string> headers = null,
-    CancellationToken ct = default
-)
-```
-
-#### Delete
-
-```csharp
-public static Task<ApiResponse> Delete(
-    string url,
-    Dictionary<string, string> headers = null,
-    CancellationToken ct = default
-)
-```
-
-```csharp
-var response = await ApiClient.Delete(
-    "https://api.example.com/player/items/456"
-);
+var response = await ApiClient.Delete("https://api.example.com/player/items/456");
 ```
 
 ### ApiResponse
@@ -245,31 +179,22 @@ if (response.Headers != null && response.Headers.TryGetValue("Content-Type", out
 
 ## ApiGlobalConfig
 
-ScriptableObject loaded at runtime from `Resources/ApiGlobalConfig`.
-Properties are read-only at runtime; edit them via the API Mocking Toolkit
-window or the Unity Inspector.
-
-### Properties
+ScriptableObject from `Resources/ApiGlobalConfig`. Read-only at runtime. Edit via Toolkit window or Inspector.
 
 ```csharp
-bool OfflineMode { get; }            // Mock everything, even unconfigured endpoints
-bool Enabled { get; }                // Master switch for the toolkit
+bool OfflineMode { get; }            // Mock everything, even unconfigured
+bool Enabled { get; }                // Master switch
 bool EnableSessionPersistence { get; } // Save sessions to disk
-string ActiveCollectionName { get; set; } // Which ApiEndpointCollection to load
+string ActiveCollectionName { get; set; } // Active collection
 ```
 
-### Loading at Runtime
-
+**Read at runtime:**
 ```csharp
 var config = Resources.Load<ApiGlobalConfig>("ApiGlobalConfig");
-
-if (config.Enabled && config.OfflineMode) {
-    Debug.Log("Toolkit active in offline mode");
-}
+if (config.Enabled && config.OfflineMode) Debug.Log("Toolkit active, offline mode");
 ```
 
-### Editing from an Editor Script
-
+**Edit from Editor script:**
 ```csharp
 #if UNITY_EDITOR
 var config = Resources.Load<ApiGlobalConfig>("ApiGlobalConfig");
@@ -285,50 +210,35 @@ UnityEditor.AssetDatabase.SaveAssets();
 
 ## ApiEndpoint
 
-Serializable model for a single configured endpoint. Stored inside an
-`ApiEndpointCollection` ScriptableObject. Edited through the API Mocking
-Toolkit window; rarely constructed by game code directly.
-
-### Properties
+Serializable endpoint model in `ApiEndpointCollection`. Edit via Toolkit window; rarely constructed by game code.
 
 ```csharp
-string Id { get; set; }                // Stable GUID — survives URL/method edits and OpenAPI round-trips
-string Name { get; set; }              // Friendly display name
-string Url { get; set; }               // URL or template ({{baseUrl}}/users)
-string Method { get; set; }            // "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"
-MatchType MatchType { get; set; }      // Exact | Contains
+string Id { get; set; }              // Stable GUID (survives URL/method edits)
+string Name { get; set; }            // Friendly name
+string Url { get; set; }             // URL or template ({{baseUrl}}/users)
+string Method { get; set; }          // GET, POST, PUT, PATCH, DELETE, HEAD
+MatchType MatchType { get; set; }    // Exact | Contains
 
-bool UseMock { get; set; }             // Per-endpoint "Mock Enabled" toggle
-bool SimulateError { get; set; }       // false → use Responses[]; true → ErrorResponses[]
+bool UseMock { get; set; }           // Per-endpoint toggle
+bool SimulateError { get; set; }     // false → Responses[]; true → ErrorResponses[]
 
-// Request-side payload (used by editor "Send" button to hit the real backend)
-string Headers { get; set; }           // Raw headers blob — one "Key: Value" per line
-string RequestBody { get; set; }       // Raw body (typically JSON) for POST/PUT/PATCH
+string Headers { get; set; }         // Raw "Key: Value" per line
+string RequestBody { get; set; }     // JSON body for POST/PUT/PATCH
 
-List<MockFlowNode> Responses { get; }       // Success response pool
-List<MockFlowNode> ErrorResponses { get; }  // Error response pool
+List<MockFlowNode> Responses { get; }       // Success responses
+List<MockFlowNode> ErrorResponses { get; }  // Error responses
 
 ResponseStrategy ResponseStrategy { get; set; }
 bool LoopResponses { get; set; }
-int CurrentResponseIndex { get; set; }      // Sequential/RoundRobin cursor; reset on Play Mode enter
+int CurrentResponseIndex { get; set; }      // Sequential/RoundRobin cursor
 
 ResponseStrategy ErrorResponseStrategy { get; set; }
 bool ErrorLoopResponses { get; set; }
-int CurrentErrorResponseIndex { get; set; } // Error cursor; reset on Play Mode enter
+int CurrentErrorResponseIndex { get; set; } // Error cursor
 ```
 
-### Routing Behavior
-
-`ApiInterceptor` evaluates incoming requests in this order:
-
-1. `ApiGlobalConfig.Enabled` OFF → real network (toolkit bypassed).
-2. `ApiGlobalConfig.OfflineMode` ON → mock everything.
-3. Matched endpoint with `UseMock == true` → mock.
-4. Otherwise → real network.
-
-When mocking, `SimulateError` chooses between `Responses[]` and
-`ErrorResponses[]`; the corresponding `ResponseStrategy` /
-`ErrorResponseStrategy` and loop flag pick a single entry from the list.
+**Routing:** `Enabled` OFF → real. `OfflineMode` ON → mock all. `UseMock` ON → mock. Else → real.
+`SimulateError` picks between `Responses[]` and `ErrorResponses[]` via strategy.
 
 ### Example
 
@@ -355,36 +265,32 @@ UnityEditor.AssetDatabase.SaveAssets();
 
 ## EnvironmentManager
 
-Persistent singleton. Stores environments and global variables on disk under
-`Application.persistentDataPath/ApiMockingToolkit/Environments/`.
+Persistent singleton. Stores environments and globals in `Application.persistentDataPath/ApiMockingToolkit/Environments/`.
 
-### Properties
-
+**Properties:**
 ```csharp
 IReadOnlyList<ApiEnvironment> Environments { get; }
-ApiEnvironment ActiveEnvironment { get; set; }      // setter ignored if env not registered
-string BuildEnvironmentId { get; set; }             // ID of env compiled into builds
-ApiEnvironment BuildEnvironment { get; }            // resolved environment, or null
+ApiEnvironment ActiveEnvironment { get; set; }      // Ignored if not registered
+string BuildEnvironmentId { get; set; }             // Env compiled into builds
+ApiEnvironment BuildEnvironment { get; }
 IReadOnlyDictionary<string, string> GlobalVariables { get; }
 ```
 
-### Methods
-
+**Methods:**
 ```csharp
 void AddEnvironment(ApiEnvironment env);
-bool RemoveEnvironment(ApiEnvironment env);   // false if env null or only one left
+bool RemoveEnvironment(ApiEnvironment env);        // False if null or only one left
 void SetGlobalVariable(string key, string value);
 bool RemoveGlobalVariable(string key);
-string ResolveVariable(string key);            // active env first, then globals
-ApiRequest InterpolateRequest(ApiRequest req); // strict; throws on unresolved
+string ResolveVariable(string key);                // Active env first, then globals
+ApiRequest InterpolateRequest(ApiRequest req);     // Strict; throws on unresolved
 void SaveEnvironments();
 ```
 
-### ApiEnvironment
-
+**ApiEnvironment:**
 ```csharp
 public class ApiEnvironment {
-    public string Id { get; }                 // GUID
+    public string Id { get; }              // GUID
     public string Name { get; set; }
     public string BaseUrl { get; set; }
     public Dictionary<string, string> Variables { get; set; }
@@ -398,213 +304,99 @@ public class ApiEnvironment {
 }
 ```
 
-### Example
-
+**Example:**
 ```csharp
 var envManager = EnvironmentManager.Instance;
-
 var devEnv = new ApiEnvironment("Development", "http://localhost:3000");
 devEnv.SetVariable("apiKey", "dev-key-123");
-
 envManager.AddEnvironment(devEnv);
 envManager.ActiveEnvironment = devEnv;
-
 string url = envManager.ResolveVariable("baseUrl") + "/api/data";
 ```
 
-### Build Environment
-
-The toolkit enforces a single environment per build via
-`EnvironmentManager.BuildEnvironmentId`:
-
-- In **Play Mode**, any environment can be active.
-- For **Unity builds**, `BuildPreprocessor` checks:
-  - `ApiGlobalConfig.OfflineMode` must be OFF — otherwise build fails with
-    `BuildFailedException`.
-  - If `BuildEnvironmentId` resolves to a registered environment, the active
-    environment must match it; otherwise the build fails.
-  - If no `BuildEnvironmentId` is set, the build proceeds with a warning
-    (fine for projects that hardcode URLs and don't use `{{variable}}`
-    interpolation).
-
-```csharp
-var envManager = EnvironmentManager.Instance;
-
-var prodEnv = new ApiEnvironment("Production", "https://api.mygame.com");
-envManager.AddEnvironment(prodEnv);
-envManager.ActiveEnvironment = prodEnv;
-envManager.BuildEnvironmentId = prodEnv.Id;
-envManager.SaveEnvironments();
-```
-
-> 🔒 **Safety:** If a build environment is set and the active environment
-> differs from it, the Unity build fails with a clear error message. If no
-> build environment is set, the build proceeds with a warning.
+**Build enforcement:** `BuildPreprocessor` checks `OfflineMode` OFF, `BuildEnvironmentId` registered, active env matches build env. Play Mode has no restrictions. Violations fail build with `BuildFailedException`.
 
 ---
 
 ## SessionManager
 
-Editor-only. Persists session JSON files under
-`Application.persistentDataPath/ApiMockingToolkitSessions/`.
+Editor-only. Persists sessions in `Application.persistentDataPath/ApiMockingToolkitSessions/`.
 
-### Properties
-
+**Properties:**
 ```csharp
 Session CurrentSession { get; }
-static event Action OnSessionChanged;   // fired on start/end/delete
+static event Action OnSessionChanged;   // Fires on start/end/delete
 ```
 
-### Methods
-
+**Methods:**
 ```csharp
 void StartNewSession();
-void EndCurrentSession();                // also saves to disk
+void EndCurrentSession();               // Also saves to disk
 void AddLogToCurrentSession(LogEntry log);
 void SaveSession(Session session);
-
 List<Session> LoadAllSessions();
-Session       LoadSession(string sessionId);   // by ID, not file path
-
+Session LoadSession(string sessionId);  // By ID, not file path
 void DeleteSession(string sessionId);
 void DeleteAllSessions();
-
-int    GetSavedSessionCount();
+int GetSavedSessionCount();
 string GetSessionFolderPath();
 ```
 
-### Example
-
+**Example:**
 ```csharp
 #if UNITY_EDITOR
 var sessionManager = SessionManager.Instance;
-
 sessionManager.StartNewSession();
-
-// ... play game, make API calls ...
-
-sessionManager.EndCurrentSession();   // auto-saves
-
+// ... play, make API calls ...
+sessionManager.EndCurrentSession();   // Auto-saves
 var session = sessionManager.LoadSession("a1b2c3d4-...");
-Debug.Log($"Session had {session.TotalRequests} requests, " +
-          $"duration {session.GetDurationSeconds()}s");
+Debug.Log($"Session: {session.TotalRequests} requests, {session.GetDurationSeconds()}s duration");
 #endif
 ```
 
-> Persistence is gated by `ApiGlobalConfig.EnableSessionPersistence`. Cleanup
-> keeps at most `Constants.SessionLimits.MaxSessions` (1,000) files on disk.
+Gated by `EnableSessionPersistence`. Max 1,000 sessions on disk; older auto-pruned.
 
 ---
 
 ## Configuration
 
-### Response Strategy
-
+**ResponseStrategy:**
 ```csharp
-public enum ResponseStrategy
-{
-    Sequential,   // 1 → 2 → 3 → 1 (loops if Endpoint.LoopResponses)
-    RoundRobin,   // Cycle through evenly, forever
-    Random        // Uniform random selection per call
-}
+Sequential   // 1 → 2 → 3 → 1 (loops if LoopResponses)
+RoundRobin   // Cycle through evenly, forever
+Random       // Uniform random per call
 ```
 
-### Match Type
-
+**MatchType:**
 ```csharp
-public enum MatchType
-{
-    Exact,      // request.url == endpoint.url
-    Contains    // request.url.Contains(endpoint.url)
-}
+Exact       // request.url == endpoint.url
+Contains    // request.url.Contains(endpoint.url)
 ```
 
-### HTTP Methods
-
-HTTP method names are exposed as string constants under `Constants.HttpMethods`
-(used internally by `ApiRequest`):
-
+**HTTP Methods (Constants.HttpMethods):**
 ```csharp
-Constants.HttpMethods.Get      // "GET"
-Constants.HttpMethods.Post     // "POST"
-Constants.HttpMethods.Put      // "PUT"
-Constants.HttpMethods.Patch    // "PATCH"
-Constants.HttpMethods.Delete   // "DELETE"
-Constants.HttpMethods.Head     // "HEAD"
+Get    // "GET"
+Post   // "POST"
+Put    // "PUT"
+Patch  // "PATCH"
+Delete // "DELETE"
+Head   // "HEAD"
 ```
 
-Game code does not pick a method directly — it calls the matching `ApiClient`
-method (`Get`, `Post`, `Put`, `Patch`, `Delete`).
+Game code calls `ApiClient` methods directly; no need to specify method strings.
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+**Endpoints not matched:** `Enabled`? Offline Mode set? URL matches (case-sensitive)? MatchType (Exact vs Contains)? Correct collection? HTTP method match? `UseMock` ON (if Offline Mode OFF)?
 
-**Q: Endpoints not being matched**
+**Variables not replaced:** Exists in active env/global? Syntax `{{variableName}}`? Typos? Active env set? Throws `MissingEnvironmentVariableException` with available vars.
 
-A: Check these:
-1. Is the toolkit `Enabled` and Offline Mode set as you expect?
-2. Does the URL match (case-sensitive) under the configured `MatchType` (Exact vs Contains)?
-3. Is the correct collection selected (`ApiGlobalConfig.ActiveCollectionName`)?
-4. Does the HTTP method match (GET vs POST etc.)?
-5. With Offline Mode OFF, is the endpoint's **Mock Enabled** toggle (`UseMock`)
-   ON? If OFF, matched endpoints still go to the real backend.
+**Sessions not saving:** `EnableSessionPersistence` true? Running in Editor (sessions Editor-only)? `EndCurrentSession()` called or exited Play Mode? Check Console for `[SessionManager]` errors.
 
-**Q: Variables not being replaced**
+**Demo Scene broken:** Re-import Samples from Package Manager. Select "Demo Scene Collection". Check Console.
 
-A: Ensure:
-1. Variable exists in the active environment or global scope.
-2. Syntax is `{{variableName}}`.
-3. No typos in variable name.
-4. Active environment is set.
+**Build errors:** `OfflineMode` ON (disable). No build environment set or active env mismatch. Scripting backend/API compatibility level for `async/await`.
 
-If interpolation fails, the toolkit throws `MissingEnvironmentVariableException`
-with a list of available variables.
-
-**Q: Sessions not saving**
-
-A: Verify:
-1. `ApiGlobalConfig.EnableSessionPersistence` is true.
-2. You are running in the Unity Editor (sessions are Editor-only).
-3. `EndCurrentSession()` was called (or you exited Play Mode).
-4. Check the Console for `[SessionManager]` errors.
-
-**Q: Demo Scene not working**
-
-A: Try:
-1. Re-import the Samples folder from Package Manager.
-2. Select "Demo Scene Collection" in the collection dropdown.
-3. Check the Console for errors.
-
-**Q: Build errors**
-
-A: Common causes:
-1. `OfflineMode` is on — disable it before building.
-2. No environment marked as the build environment, or the active environment
-   differs from the build environment.
-3. Set scripting backend / API compatibility level appropriately for `async/await`.
-
-**Q: Performance issues**
-
-A: Optimize:
-1. Limit response body size.
-2. Reduce simulated latency.
-3. Disable session persistence if not needed.
-
----
-
-### Getting Help
-
-**Asset Store Support:**
-- Email: support@codecarnage.com
-- Response time: 2-3 business days
-
-**Documentation:**
-- [Quick Start](/docs/quick-start)
-- [Guides](/docs/guides)
-
----
-
-**End of API Reference**
+**Performance:** Limit response body size. Reduce latency. Disable session persistence if not needed.

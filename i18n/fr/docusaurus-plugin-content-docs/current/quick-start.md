@@ -5,16 +5,14 @@ sidebar_position: 1
 toc_max_heading_level: 3
 ---
 
-**Develop and test your game's API calls in Unity without waiting for backend services.**
+Développez et testez les appels API de votre jeu dans Unity sans attendre les services backend.
 
 ---
 
 import VideoTimestamp from '@site/src/components/VideoTimestamp';
 import CodeBlock from '@theme/CodeBlock';
 
-## 🎥 Watch First
-
-**Prefer video? Watch this quick tutorial:**
+## Vidéo
 
 <iframe
   id="demo-video"
@@ -26,261 +24,132 @@ import CodeBlock from '@theme/CodeBlock';
   allowfullscreen
 />
 
-**Or follow the written guide below** ↓
+---
+
+## Le problème
+
+Backend en retard ? Réseau instable ? Vous voulez travailler hors ligne ? Besoin de tester les erreurs ?
+
+- Backend pas prêt → définissez vous-même le contrat API, construisez maintenant, basculez vers le vrai backend plus tard
+- Besoin de tester les erreurs → configurez des réponses succès/erreur/timeout/invalides à la demande
+- Développement hors ligne → jouez sans réseau, pas de VPN nécessaire
+- Test de pagination → cycles automatiques à travers différentes réponses
+
+Routez les appels API vers :
+- Vrais backends (production, staging)
+- Serveurs QA
+- Localhost
+- Réponses mockées (codes de statut personnalisés, latence, données)
+
+![Routage API Mocking Toolkit](/img/diagram-amt-optimized.png)
 
 ---
 
-## The Problem You're Solving <VideoTimestamp seconds={30} label="Jump to video @ 0:30" />
+## Installation
 
-You're building a Unity game that talks to a backend server. At minimum, you need:
+1. Ouvrez l'Unity Asset Store
+2. Recherchez "API Mocking Toolkit" → `Import`
+3. Importez tous les fichiers
 
-| What your game needs                | What's getting in the way                                                                 |
-| ----------------------------------- | ------------------------------------------------------------------------------------------ |
-| <ul><li>Login system</li><li>Player profiles</li><li>Leaderboards</li><li>Shop/inventory</li><li>Multiplayer matchmaking</li></ul> | <ul><li>❌ **Backend team isn't ready yet** – You're blocked, can't test your game</li><li>❌ **Testing is painful** – Hard to reproduce errors, need internet, flaky tests</li><li>❌ **Development is slow** – Every change needs backend coordination</li></ul> |
-
-**API Mocking Toolkit solves this.** Run your entire game without a backend. Test any scenario. Work completely offline.
+**Prérequis :** Unity 2021.3+, aucune dépendance externe
 
 ---
 
-## What You'll Learn
-
-In this quick guide, you'll:
-1. ✅ Install API Mocking Toolkit
-2. ✅ Run the demo scene (see it working instantly!)
-3. ✅ Create your first mock API endpoint
-
-## Real Developer Scenarios
-
-**See yourself in these situations?**
-
-| Scenario                | Without API Mocking Toolkit                                                                 | With API Mocking Toolkit                                                                                 |
-| ----------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Backend team is behind  | <ul><li>Blocked, UI untestable</li><li>Fake data everywhere</li><li>Big refactor later</li></ul> | <ul><li>You define the API contract</li><li>Build & test the client now</li><li>Switch to real backend when it's ready</li></ul> |
-| Testing edge cases      | <ul><li>Depend on backend team to simulate errors</li><li>Unstable network</li><li>Bugs hard to reproduce</li></ul> | <ul><li>Configure success/error/timeout/invalid responses yourself</li><li>Replay scenarios instantly as often as needed</li></ul> |
-| Working offline         | <ul><li>Game can’t run without network/VPN</li><li>Progress stalls</li></ul>                | <ul><li>Game uses only mocked APIs in Unity</li><li>Keep working wherever you are</li></ul>             |
-
-**Sound familiar? Let's fix it.**
-
-_Diagram concept (to be rendered as a static image later):_ your game talks to the API Mocking Toolkit, which can in turn route calls to:
-
-- The real backend server
-- A local development server
-- A mocked success response
-- A mocked error response
-
-**↑ One tool, four ways to test** – real backend, local server, mock success, mock error
-
----
-
-**Make your game work without a backend.**
-
-No live backend required during development. Your game talks to mocked APIs running entirely inside Unity.
-
----
-
-## Installation (Unity Asset Store)
-
-1. Open the Unity Asset Store
-2. Search for "API Mocking Toolkit" or open the Asset Store page directly in your browser.
-3. Click `Import`
-4. Import all files
-
-**Requirements:**
-- Unity 2021.3 or later
-- No external dependencies
-
----
-
-## Run the Demo Scene <VideoTimestamp seconds={60} label="Jump to video @ 1:00" />
-
-Follow these steps to run the included demo scene and verify that the toolkit is installed correctly:
+## Scène de démo
 
 <table className="steps-table">
   <tbody>
     <tr>
-      <td><strong>Step 1 – Open the demo scene</strong></td>
-      <td>
-        <p>
-          In Unity, open <code>Assets &gt; CodeCarnage &gt; ApiMockingToolkit &gt; Samples &gt; DemoScene &gt; DemoScene.unity</code>,
-          then double-click to open it.
-        </p>
-        <p><strong>What you'll see:</strong></p>
-        <ul>
-          <li>A simple UI with two buttons: <code>Get Users</code> and <code>Get Posts</code></li>
-          <li>Request/Response panels showing API calls</li>
-        </ul>
-      </td>
+      <td><strong>1. Ouvrir la scène de démo</strong></td>
+      <td><code>Assets &gt; CodeCarnage &gt; ApiMockingToolkit &gt; Samples &gt; DemoScene &gt; DemoScene.unity</code></td>
     </tr>
     <tr>
-      <td><strong>Step 2 – Press Play</strong></td>
-      <td>
-        <p>Hit the Play button. The scene runs.</p>
-      </td>
+      <td><strong>2. Appuyer sur Play</strong></td>
+      <td>La scène se charge avec deux boutons : <code>Get Users</code> et <code>Get Posts</code></td>
     </tr>
     <tr>
-      <td><strong>Step 3 – Click "Get Users"</strong></td>
-      <td>
-        <p><strong>What happens:</strong></p>
-        <ul>
-          <li>Button sends API request to <code>jsonplaceholder.typicode.com/users</code></li>
-          <li>API Mocking Toolkit intercepts it</li>
-          <li>Returns mock user data <strong>instantly</strong></li>
-          <li>No internet needed!</li>
-        </ul>
-        <p>Example request/response:</p>
-        <CodeBlock language="text">{`REQUEST:
-GET /users
-
-RESPONSE:
-Status: 200
-{
-  "id": 1,
-  "name": "Leanne Graham",
-  "username": "Bret",
-  ...
-}`}</CodeBlock>
-      </td>
+      <td><strong>3. Cliquer sur "Get Users"</strong></td>
+      <td>Envoie une requête → le Toolkit l'intercepte → retourne des données mockées instantanément, sans internet</td>
     </tr>
     <tr>
-      <td><strong>Step 4 – Click "Get Posts" multiple times</strong></td>
-      <td>
-        <p><strong>Watch this:</strong></p>
-        <ul>
-          <li>First click → Returns page 1 of posts</li>
-          <li>Second click → Returns page 2 of posts</li>
-          <li>Third click → Returns page 3 of posts</li>
-          <li>Fourth click → Loops back to page 1</li>
-        </ul>
-        <p>
-          <strong>This is Response Strategies</strong> – API Mocking Toolkit cycles through different responses automatically,
-          which is useful for testing pagination and repeated calls.
-        </p>
-      </td>
+      <td><strong>4. Cliquer plusieurs fois sur "Get Posts"</strong></td>
+      <td>Cycle à travers les pages 1 → 2 → 3 → 1 (Stratégies de réponse en action)</td>
     </tr>
   </tbody>
 </table>
 
-**What just happened?**
-
-You just ran a fully functional game that makes API calls through `ApiClient`, receives responses, and handles data without depending on a live backend.
-
-- ✅ No backend team required during this stage of development
-- ✅ No network connection required while using only mocked APIs
-- ✅ Fast, predictable responses
-- ✅ Complete control over the data you test with
-
 ---
 
-## How It Works <VideoTimestamp seconds={90} label="Jump to video @ 1:30" />
+## Comment ça marche
 
-**You might be wondering: "How does this work?"**
-
-Let's peek under the hood. Open `DemoController.cs`:
+Ouvrez `DemoController.cs` :
 
 ```csharp
 public async void OnGetUsersClicked()
 {
-    // This is normal Unity HTTP code - nothing special!
-    var response = await ApiClient.GetAsync(
-        "https://jsonplaceholder.typicode.com/users"
-    );
-
-    // Display the response in the UI
+    var response = await ApiClient.Get("{{baseUrl}}/users");
     DisplayResponse(response);
 }
 ```
 
-**That's it.** Standard API call. No magic.
-
-Behind the scenes:
-
-- **You configured an endpoint** (already done in the demo scene)
-  - URL: `https://jsonplaceholder.typicode.com/users`
-  - Mock response: `[{user data...}]`
-
-- **API Mocking Toolkit intercepts**
-  - Sees the URL matches your config
-  - Returns your mock data instead of hitting the real server
-
-- **Your code gets the response**
-  - Doesn't know it's mocked
-  - Works exactly like a real API
-
-**The key idea:** your game code doesn't change.
-
-Same code works with:
-- ✅ Mocked data (when API Mocking Toolkit is active)
-- ✅ Real backend (when you turn mocking off)
-
-**No `if (testing)` checks. No special test code. Just works.**
+Appel API standard. `{{baseUrl}}` se résout selon l'environnement actif. Le Toolkit intercepte les URLs correspondantes et retourne vos données mockées. Pas de vérifications `if (testing)`. Le même code fonctionne avec les mocks ou les vrais backends.
 
 ---
 
-## Create Your First Endpoint (Your Turn!) <VideoTimestamp seconds={120} label="Jump to video @ 2:00" />
+## Créez votre premier endpoint
 
-**Now for the real power: Mock YOUR game's API.**
-
-Imagine you're building an RPG. You need a player profile API, but the backend isn't ready yet.
-
-**Let's build it anyway:**
+Mockez l'API de votre jeu en utilisant l'endpoint `/comments` de JSONPlaceholder comme exemple. Fonctionne hors ligne avec les mocks, ou en ligne en appelant la vraie API.
 
 <table className="steps-table">
   <tbody>
     <tr>
-      <td><strong>Step 1 – Open the API Mocking Toolkit window</strong></td>
-      <td>
-        In Unity, open <code>Window &gt; CodeCarnage &gt; API Mocking Toolkit</code>. A new window opens—this is your control center.
-      </td>
+      <td><strong>1. Ouvrir la fenêtre du toolkit</strong></td>
+      <td><code>Window &gt; CodeCarnage &gt; API Mocking Toolkit</code></td>
     </tr>
     <tr>
-      <td><strong>Step 2 – Create an endpoint</strong></td>
+      <td><strong>2. Créer un endpoint</strong></td>
       <td>
-        Click <strong>"+ Endpoint"</strong>. In the form, set:
+        Cliquez sur "+ Endpoint", définissez :
         <ul>
-          <li><strong>Name:</strong> <code>Get User Profile</code> (friendly name)</li>
-          <li><strong>Method:</strong> <code>GET</code></li>
-          <li><strong>URL:</strong> <code>https://api.mygame.com/user/profile</code></li>
-          <li><strong>Match Type:</strong> <code>Exact</code></li>
+          <li><strong>Nom :</strong> <code>Create Comment</code></li>
+          <li><strong>Méthode :</strong> <code>POST</code></li>
+          <li><strong>URL :</strong> <code>https://jsonplaceholder.typicode.com/comments</code></li>
+          <li><strong>Type de correspondance :</strong> <code>Exact</code></li>
         </ul>
       </td>
     </tr>
     <tr>
-      <td><strong>Step 3 – Add a mock response</strong></td>
+      <td><strong>3. Ajouter une réponse mock</strong></td>
       <td>
-        <p>
-          In the <strong>Response</strong> section, set <strong>Status Code</strong> to <code>200</code> and use a JSON body like:
-        </p>
+        Code de statut : <code>201</code>
         <CodeBlock language="json">{`{
-  "id": 123,
-  "username": "player1",
-  "level": 42,
-  "coins": 9999
+  "id": 501,
+  "postId": 1,
+  "name": "Demo comment from Unity",
+  "email": "player@example.com",
+  "body": "Returned from mock"
 }`}</CodeBlock>
       </td>
     </tr>
     <tr>
-      <td><strong>Step 4 – Enable Offline Mode</strong></td>
-      <td>
-        Toggle <strong>Offline Mode</strong> ON at the top of the window so the game uses mocked responses instead of the real backend.
-      </td>
+      <td><strong>4. Activer le mode hors ligne</strong></td>
+      <td>Activez le bouton en haut</td>
     </tr>
     <tr>
-      <td><strong>Step 5 – Test it</strong></td>
+      <td><strong>5. Tester</strong></td>
       <td>
-        <p>Create a test script:</p>
-        <CodeBlock language="csharp">{`using UnityEngine;
+        <CodeBlock language="csharp">{`using System.Collections.Generic;
+using UnityEngine;
 using CodeCarnage.ApiMockingToolkit;
 
 public class ProfileTest : MonoBehaviour
 {
     async void Start()
     {
-        var response = await ApiClient.GetAsync(
-            "https://api.mygame.com/user/profile"
-        );
-
+        var requestBody = "{\n  \"postId\": 1,\n  \"name\": \"Demo comment\",\n  \"email\": \"player@example.com\"\n}";
+        var headers = new Dictionary<string, string> { { "Content-Type", "application/json" } };
+        var response = await ApiClient.Post("https://jsonplaceholder.typicode.com/comments", requestBody, headers);
         Debug.Log($"Status: {response.StatusCode}");
-        Debug.Log($"Body: {response.Body}");
     }
 }`}</CodeBlock>
       </td>
@@ -288,38 +157,20 @@ public class ProfileTest : MonoBehaviour
   </tbody>
 </table>
 
-**Run it!** You'll see your mock data in the console.
+---
+
+## Prochaines étapes
+
+- [Fonctionnalités principales](/docs/core-features) – Stratégies de réponse, environnements, sessions, OpenAPI, simulation d'erreurs
+- [Guides](/docs/guides) – Workflows réels
+- [Référence de l'API](/docs/api-reference) – Surface API complète
 
 ---
 
-## What's Next?
+## Dépannage
 
-🎉 **Congratulations!** You've:
-- Installed API Mocking Toolkit
-- Run the demo scene
-- Created your first endpoint
+**Rien ne se passe ?** Vérifiez que le mode hors ligne est activé, que l'URL correspond exactement (sensible à la casse), consultez la Console pour les erreurs.
 
-**Continue learning:**
-- [Core Features (Deep Dive)](/docs/core-features) – Response strategies, offline mode, environments, sessions, OpenAPI, error simulation, and more
-- [Guides](/docs/guides) – Workflows and real-world scenarios
-- [API Reference](/docs/api-reference) – Full API surface and code examples
+**La scène de démo ne fonctionne pas ?** Vérifiez que "Demo Scene Collection" est sélectionnée, réimportez les Samples depuis le Package Manager.
 
-**Watch the video again later:**
-- Use it as a visual cheatsheet when you come back to the tool
-
----
-
-## Troubleshooting
-
-**Nothing happening?**
-- Make sure Offline Mode is ON
-- Check the URL matches exactly (case-sensitive)
-- Look for errors in the Console
-
-**Demo scene not working?**
-- Make sure "Demo Scene Collection" is selected in dropdown
-- Re-import the Samples folder from Package Manager
-
-**Need help?**
-- [Contact Support](/support) <!-- TODO: point to the real support/contact page when available -->
-- Check [Troubleshooting FAQ](/docs/api-reference#troubleshooting)
+**Des questions ?** Consultez la [FAQ de dépannage](/docs/api-reference#dépannage) ou envoyez un email à `support@codecarnage.com`

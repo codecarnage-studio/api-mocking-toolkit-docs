@@ -4,100 +4,53 @@ title: Guides
 sidebar_position: 2
 ---
 
-**Flux de travail et cas d'utilisation réels.**
+Workflows et cas d'utilisation réels.
 
 ---
 
-## 🎥 Cas d'utilisation avancés
+## Flux de développement
 
-**Découvrez des flux de travail réels en action :**
+Construisez sans attendre le backend.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/T5L8wV9waKk?enablejsapi=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+### API backend non prête
 
-**Vous préférez lire ? Faites défiler vers le bas** ↓
-
----
-
-## Table des matières
-
-- [Flux de développement](#flux-de-developpement)
-- [Tests et QA](#testing--qa)
-- [Prototyper des API](#prototyping-apis)
-- [Déboguer avec des sessions](#debugging-with-sessions)
-- [Collaboration en équipe](#team-collaboration)
-- [Étendre la scène de démo](#extending-the-demo-scene)
-
----
-
-## Flux de développement {#flux-de-developpement}
-
-Créez des jeux Unity sans attendre que le backend soit prêt.
-
-### Scénario : API backend non prêtes
-
-**Votre situation :**
-- L'équipe backend n'a pas encore terminé les API
-- Vous devez construire l'UI et le gameplay
-- Can't wait for backend completion
-
-**Solution with API Mocking Toolkit:**
-
-**Step 1: Define API Contract**
-
-Work with backend team to agree on API contract:
+Définissez le contrat avec l'équipe backend :
 
 ```json
 // POST /api/login
-Request:
+Requête :
 {
   "username": "string",
   "password": "string"
 }
 
-Response (Success):
+Réponse (Succès) :
 {
   "token": "string",
   "userId": "number",
   "username": "string"
 }
 
-Response (Error):
+Réponse (Erreur) :
 {
   "error": "Invalid credentials"
 }
 ```
 
-**Step 2: Mock It**
+Créez l'endpoint mock dans le toolkit :
+- Endpoint : `POST /api/login`
+- Succès (200) : `{"token": "mock-jwt-token-12345", "userId": 1001, "username": "testuser"}`
+- Erreur (401) : `{"error": "Invalid credentials"}`
+- Utilisez la stratégie `Aléatoire` pour mélanger les réponses, ou `Séquentielle` (1er succès → 2e erreur → boucle)
 
-Create endpoints in API Mocking Toolkit:
-
-1. Endpoint: `POST /api/login`
-2. Success Response (200):
-```json
-{
-  "token": "mock-jwt-token-12345",
-  "userId": 1001,
-  "username": "testuser"
-}
-```
-
-3. Error Response (401):
-```json
-{
-  "error": "Invalid credentials"
-}
-```
-
-4. Use Weighted strategy: 90% success, 10% error
-
-**Step 3: Build Your UI**
+Construisez l'UI :
 
 ```csharp
 public class LoginManager : MonoBehaviour
 {
     public async void OnLoginButtonClicked()
     {
-        var response = await ApiClient.PostAsync(
+        var response = await ApiClient.Post(
             "https://api.mygame.com/login",
             $"{{\"username\":\"{username}\",\"password\":\"{password}\"}}"
         );
@@ -107,121 +60,78 @@ public class LoginManager : MonoBehaviour
             PlayerPrefs.SetString("token", data.token);
             SceneManager.LoadScene("MainMenu");
         } else {
-            ShowError("Login failed");
+            ShowError("Connexion échouée");
         }
     }
 }
 ```
 
-**Step 4: Test Everything**
+Quand le backend est prêt, désactivez le mode hors ligne. Le code fonctionne sans modification. Les builds de production doivent désactiver le mode hors ligne ; `BuildPreprocessor` l'applique. Les types réservés à l'éditeur (`ApiInterceptor`, `SessionManager`) sont encapsulés dans `#if UNITY_EDITOR`, jamais dans les builds.
 
-- ✅ UI works with mock data
-- ✅ Error handling tested
-- ✅ Loading states tested
-- ✅ Edge cases covered
-
-**Step 5: Switch to Real Backend**
-
-When backend is ready:
-
-1. Turn OFF Offline Mode
-2. Keep endpoint configured
-3. Code works with zero changes!
-
-**Benefits:**
-- No blocked development time
-- Frontend and backend work in parallel
-- Test error cases easily
-- Smooth transition to real API
-
-> **Build & security note (to finalize before 1.0):**
-> In development you typically enable Offline Mode and use mock collections so the game never talks to a live backend.
-> For production builds, the recommended pattern is to talk to real APIs and treat mocks as a dev‑only tool.
-> Before release, decide whether the interceptor and mock collections are excluded from production builds or simply disabled via configuration, and ensure no secrets (API keys, tokens) are stored in environment variables that ship with the game client.
 ---
 
-## Testing & QA
+## Tests et QA
 
-Create reproducible test scenarios without backend changes.
+Créez des scénarios de test reproductibles sans coordination avec le backend.
 
-### Scenario: Testing Error Handling
+### Gestion des erreurs
 
-**Challenge:** Test how your game handles errors.
-
-**Solution:**
-
-**Step 1: Create Error Scenarios**
-
+Configuration de l'endpoint :
 ```
-Endpoint: GET /api/player/inventory
-
-Response 1 (Success) - Weight: 70
-Response 2 (Timeout) - Status 408 - Weight: 10
-Response 3 (Server Error) - Status 500 - Weight: 10
-Response 4 (Auth Error) - Status 401 - Weight: 10
+Endpoint : GET /api/player/inventory
+Stratégie : Aléatoire
+Responses[] :        Succès 200
+ErrorResponses[] :   Statut 408 (timeout, latence 5000 ms)
+                     Statut 500 (erreur serveur)
+                     Statut 401 (erreur auth)
 ```
 
-**Step 2: Run Automated Tests**
+Activez/désactivez `SimulateError` pour basculer entre `Responses[]` et `ErrorResponses[]`.
+
+Exécutez des tests automatisés :
 
 ```csharp
 [UnityTest]
 public IEnumerator TestInventoryErrorHandling()
 {
-    // Enable offline mode for controlled testing
-    ApiGlobalConfig.Instance.OfflineMode = true;
-    
-    // Call API multiple times
+    // Activez le mode hors ligne dans la fenêtre du toolkit avant d'exécuter
+    // (Window > CodeCarnage > API Mocking Toolkit > Offline Mode)
+
+    // Appelez l'API plusieurs fois
     for (int i = 0; i < 20; i++) {
-        var response = await ApiClient.GetAsync("/api/player/inventory");
+        var response = await ApiClient.Get("/api/player/inventory");
         
-        // Verify error handling works
+        // Vérifiez que la gestion des erreurs fonctionne
         if (!response.Success) {
-            Assert.IsTrue(errorDialogShown, "Error dialog should be shown");
+            Assert.IsTrue(errorDialogShown, "La boîte de dialogue d'erreur doit s'afficher");
         }
     }
 }
 ```
 
-**Step 3: Manual QA Testing**
+Cas de test QA : activez le mode hors ligne → sélectionnez la collection → déclenchez le scénario → vérifiez la gestion des erreurs.
 
-Give QA team specific test instructions:
+### Cas limites
 
-```
-Test Case: Server Error Handling
-1. Enable Offline Mode
-2. Select "Test - Server Errors" collection
-3. Open Inventory screen 10 times
-4. Verify error message appears when server errors occur
-5. Verify game doesn't crash
-```
-
-**Benefits:**
-- Reproducible test cases
-- No backend coordination needed
-- Fast test execution
-- Consistent results
-
-### Scenario: Edge Case Testing
-
-**Test empty responses:**
+Testez les réponses vides :
 
 ```json
-// Empty inventory
+// Inventaire vide
 []
 
-// Null data
+// Données nulles
 null
 
-// Missing fields
+// Champs manquants
 {
   "items": null
 }
 ```
 
-**Test large responses:**
+**Testez les grandes réponses :**
 
 ```json
-// 1000 items in inventory
+// 1000 éléments dans l'inventaire
 [
   {"id": 1, "name": "Item 1"},
   {"id": 2, "name": "Item 2"},
@@ -230,393 +140,139 @@ null
 ]
 ```
 
-**Test special characters:**
+**Testez les caractères spéciaux :**
 
 ```json
 {
   "username": "test<script>alert('xss')</script>",
-  "message": "Line 1\nLine 2\tTabbed"
+  "message": "Ligne 1\nLigne 2\tAvec tabulation"
 }
 ```
 
-**Use Response Strategies:**
-
-```
-Sequential Strategy:
-Call 1 → Empty array
-Call 2 → Null data
-Call 3 → Large response
-Call 4 → Special characters
-Call 5 → Empty array (loops)
-```
+Utilisez la stratégie `Séquentielle` pour cycler à travers les cas limites à chaque appel.
 
 ---
 
-## Prototyping APIs
+## Prototypage d'APIs
 
-Design your ideal API before backend implementation.
+Concevez avant que le backend n'implémente.
 
-### Scenario: New Feature - Friend System
-
-**Step 1: Design the API**
-
-Think about what your game needs:
-
-```
-GET /api/friends - Get friend list
-POST /api/friends/add - Send friend request
-POST /api/friends/accept - Accept request
-DELETE /api/friends/{friendId} - Remove friend
-```
-
-**Step 2: Create Mock Endpoints**
+### Système d'amis
 
 ```json
 // GET /api/friends
-Response:
 {
   "friends": [
     {"id": 1, "username": "alice", "status": "online"},
     {"id": 2, "username": "bob", "status": "offline"}
   ],
-  "pendingRequests": [
-    {"id": 3, "username": "charlie"}
-  ]
+  "pendingRequests": [{"id": 3, "username": "charlie"}]
 }
 ```
 
-**Step 3: Build UI**
-
-Create friend list UI using mock data.
-
-**Step 4: Iterate Quickly**
-
-Realize you need more data:
-
-```json
-// Updated response
-{
-  "friends": [
-    {
-      "id": 1,
-      "username": "alice",
-      "status": "online",
-      "level": 42,
-      "avatar": "avatar_01.png",
-      "lastSeen": "2026-04-20T14:30:00Z"
-    }
-  ]
-}
-```
-
-Update mock, see changes immediately!
-
-**Step 5: Export to OpenAPI**
-
-```
-1. Click Export in API Mocking Toolkit
-2. Save friends-api.json
-3. Send to backend team
-4. They implement exact same API
-```
-
-**Benefits:**
-- Frontend defines what it needs
-- Iterate on API design quickly
-- Backend implements to spec
-- No miscommunication
-
-> **Note:** OpenAPI export focuses on the shape of your real API (paths, methods, URLs, and schemas). Mock‑only details such as specific example payloads, artificial latencies, and error distributions remain in your collections and are not included in the exported OpenAPI document.
+Construisez l'UI, itérez sur le schéma de réponse, puis exportez → envoyez au backend. Ils implémentent selon les spécifications. Aller-retour OpenAPI sûr avec les extensions `x-amt-*` préservant les détails spécifiques au toolkit.
 
 ---
 
-## Debugging with Sessions
+## Débogage avec les sessions
 
-Use session replay for time-travel debugging.
+Rejouez les sessions pour un débogage « voyage dans le temps ».
 
-### Scenario: Bug Reproduction
+### Reproduction de bugs
 
-**Problem:**
-```
-Bug Report: "Game crashes after buying 3rd item"
-Tester can't reproduce it consistently.
-```
+Activez la persistance de session sur `ApiGlobalConfig`. Le testeur joue, le crash se produit, la session est auto-sauvegardée à la sortie du mode Play. Cliquez sur **Stop** sur la bannière REC pour capturer en milieu de session.
 
-**Solution with Sessions:**
-
-**Step 1: Enable Session Persistence**
-
-```csharp
-// In Global Config
-ApiGlobalConfig.Instance.EnableSessionPersistence = true;
-```
-
-**Step 2: Tester Plays**
-
-Tester plays normally. When crash occurs, session is auto-saved.
-
-**Step 3: Load Session**
-
-Developer loads the session:
+Chargez la session dans le Toolkit → onglet Sessions. Analysez la séquence exacte des requêtes :
 
 ```
-Window > API Mocking Toolkit > Sessions Tab
-Select: session_crash_2026-04-20_15-30-00.json
-Click: Load Session
-```
-
-**Step 4: Analyze**
-
-See exact sequence:
-
-```
-1. GET /api/shop/items - Success
-2. POST /api/shop/buy - Item 1 - Success
-3. GET /api/player/inventory - Success
-4. POST /api/shop/buy - Item 2 - Success
-5. GET /api/player/inventory - Success
-6. POST /api/shop/buy - Item 3 - Error 500
+1. GET /api/shop/items - Succès
+2. POST /api/shop/buy - Item 1 - Succès
+3. GET /api/player/inventory - Succès
+4. POST /api/shop/buy - Item 2 - Succès
+5. GET /api/player/inventory - Succès
+6. POST /api/shop/buy - Item 3 - Erreur 500
 7. GET /api/player/inventory - [CRASH]
 ```
 
-**Found it!** Game doesn't handle inventory fetch after purchase failure.
+Le jeu ne gère pas la récupération d'inventaire après un échec d'achat. Corrigez, rechargez la même session, vérifiez.
 
-**Step 5: Fix & Verify**
-
-1. Fix the bug (add error handling)
-2. Load same session again
-3. Step through sequence
-4. Verify fix works!
-
-**Benefits:**
-- Accurate bug reproduction
-- See exact API sequence
-- Less guesswork
-- Verify fixes
-
-### Scenario: Performance Analysis
-
-**Problem:** Game feels slow.
-
-**Solution:**
-
-**Step 1: Play & Record**
-
-Play the slow section, session records all API calls.
-
-**Step 2: Analyze Session**
-
-Load session and review:
+Jouez la section lente, chargez la session. Examinez les latences API :
 
 ```
-API Call                    | Latency | Status
-----------------------------|---------|--------
 GET /api/player/profile     | 120ms   | 200
-GET /api/player/inventory   | 2400ms  | 200  ← TOO SLOW!
+GET /api/player/inventory   | 2400ms  | 200  ← lent
 GET /api/player/friends     | 95ms    | 200
 GET /api/shop/items         | 150ms   | 200
 ```
 
-**Found it!** Inventory API is slow.
-
-**Step 3: Optimize**
-
-Work with backend to optimize `/api/player/inventory`.
+Collaborez avec le backend pour optimiser l'endpoint lent.
 
 ---
 
-## Team Collaboration
+## Collaboration en équipe
 
-Share configurations across team members.
+### Contrôle de version
 
-### Scenario: Multiple Developers
-
-**Challenge:** Keep endpoint configs in sync via Git or any other VCS.
-
-**Solution: Version Control**
-
-**Step 1: Add to Git**
+Les collections se trouvent sous `Assets/CodeCarnage/ApiMockingToolkit/Editor/Resources/` par défaut (chargées via `Resources.Load`). Commitez dans Git :
 
 ```bash
-# Add collection assets to git
-git add Assets/Resources/ApiEndpointCollection.asset
-git add Assets/Resources/Demo\ Scene\ Collection.asset
+git add Assets/CodeCarnage/ApiMockingToolkit/Editor/Resources/ApiEndpointCollection.asset
 git commit -m "Add API mock configurations"
 ```
 
-**Step 2: Team Pulls**
+Tous les développeurs tirent → endpoints identiques.
 
-All developers get same configs:
+### Workflow QA
 
-```bash
-git pull origin main
-```
+Créez des collections QA : `QA-Edge-Cases.asset`, `QA-Performance.asset`, `QA-Happy-Path.asset`. Sélectionnez dans le toolkit, activez le mode hors ligne, exécutez les tests.
 
-Now everyone has identical endpoints!
+### Coordination avec le backend
 
-### Scenario: QA Team
-
-**Give QA specific collections:**
-
-```
-QA-Edge-Cases.asset - All error scenarios
-QA-Performance.asset - Large responses, slow APIs
-QA-Happy-Path.asset - All success cases
-```
-
-**Instructions:**
-
-```
-1. Open API Mocking Toolkit
-2. Select "QA-Edge-Cases" collection
-3. Enable Offline Mode
-4. Run test plan
-```
-
-### Scenario: Backend Team Coordination
-
-**Step 1: Frontend Designs API**
-
-Create endpoints in API Mocking Toolkit.
-
-**Step 2: Export OpenAPI Spec**
-
-```
-API Mocking Toolkit > Export > save api-spec.json
-```
-
-**Step 3: Share with Backend**
-
-Send `api-spec.json` to backend team.
-
-**Step 4: Backend Implements**
-
-They implement to the exact spec.
-
-**Step 5: Test with Real Backend**
-
-Turn off Offline Mode, verify it works!
+Créez les endpoints → exportez la spec OpenAPI → envoyez au backend → ils implémentent selon les specs → désactivez le mode hors ligne → testez avec le vrai backend.
 
 ---
 
-## Extending the Demo Scene
+## Extension de la scène de démo
 
-Learn by customizing the included demo.
-
-### Understanding DemoController.cs
-
-The demo scene shows two buttons: "Get Users" and "Get Posts".
-
-**Key code:**
+La démo montre les boutons "Get Users" / "Get Posts" :
 
 ```csharp
 public async void OnGetUsersClicked()
 {
-    // Make API call
-    var response = await ApiClient.GetAsync(
-        "https://jsonplaceholder.typicode.com/users"
-    );
-    
-    // Display in UI
+    var response = await ApiClient.Get("https://jsonplaceholder.typicode.com/users");
     rightText.text = FormatResponse(response);
 }
 ```
 
-### Exercise 1: Add a New Button
+### Ajouter un nouveau bouton
 
-**Goal:** Add "Get Comments" button.
-
-**Step 1: Add Endpoint**
-
-```
-Endpoint: GET https://jsonplaceholder.typicode.com/comments
-Response: (copy from actual API or create mock)
-```
-
-**Step 2: Add UI Button**
-
-In Scene:
-1. Duplicate "Get Posts" button
-2. Rename to "Get Comments"
-3. Update text
-
-**Step 3: Add Code**
+Ajoutez un endpoint → `GET https://jsonplaceholder.typicode.com/comments` → dupliquez le bouton "Get Posts" → ajoutez un gestionnaire :
 
 ```csharp
 public async void OnGetCommentsClicked()
 {
-    var response = await ApiClient.GetAsync(
-        "https://jsonplaceholder.typicode.com/comments"
-    );
+    var response = await ApiClient.Get("https://jsonplaceholder.typicode.com/comments");
     UpdateUI(response);
 }
 ```
 
-**Step 4: Wire It Up**
+Connectez le OnClick du bouton pour appeler le gestionnaire.
 
-In Inspector, set button OnClick to call `OnGetCommentsClicked`.
+### Pagination avec une stratégie de réponse
 
-### Exercise 2: Add Response Strategy
+Ajoutez 3 réponses pour `GET /posts` (Page 1, Page 2, Page 3). Définissez la stratégie de réponse sur **Séquentielle**. Chaque clic retourne la page suivante, boucle au 4e clic.
 
-**Goal:** Make "Get Posts" cycle through pages.
+### Simulation d'erreurs
 
-**Step 1: Add Multiple Responses**
-
-For endpoint `GET /posts`:
-
-```
-Response 1 (Page 1): Posts 1-10
-Response 2 (Page 2): Posts 11-20
-Response 3 (Page 3): Posts 21-30
-```
-
-**Step 2: Set Strategy**
-
-Set Response Strategy to **Sequential**.
-
-**Step 3: Test**
-
-Click "Get Posts" multiple times:
-- Click 1: Page 1
-- Click 2: Page 2
-- Click 3: Page 3
-- Click 4: Page 1 (loops)
-
-### Exercise 3: Add Error Simulation
-
-**Goal:** Mix success and error responses.
-
-**Step 1: Add Error Response**
-
-```
-Response 4 (Error):
-Status: 500
-Body: {"error": "Server error"}
-Weight: 10
-```
-
-**Step 2: Update Weights**
-
-```
-Response 1 (Page 1) - Weight: 30
-Response 2 (Page 2) - Weight: 30
-Response 3 (Page 3) - Weight: 30
-Response 4 (Error) - Weight: 10
-```
-
-**Step 3: Add Error Handling**
+Ajoutez une réponse d'erreur (500). Définissez la **Stratégie de réponse d'erreur** sur `Séquentielle` ou `Aléatoire`. Activez/désactivez **Simulate Error** pour basculer entre les chemins succès et erreur. Gérez dans le code :
 
 ```csharp
 if (!response.Success) {
-    rightText.text = $"ERROR: {response.StatusCode}";
+    rightText.text = $"ERREUR : {response.StatusCode}";
     return;
 }
 ```
 
-**Step 4: Test**
-
-Click "Get Posts" many times. ~10% will show error!
-
 ---
 
-**Next:** [API Reference](api-reference.md) - Code cheat sheet
+**Suite :** [Référence de l'API](api-reference.md) - Aide-mémoire du code

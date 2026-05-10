@@ -1,38 +1,40 @@
 ---
 id: core-features
-title: Core Features (Deep Dive)
+title: Fonctionnalités principales
 sidebar_position: 2
 ---
 
-You've seen the basics in the Quick Start. This page dives into the **core features** that make API Mocking Toolkit powerful.
-
-Each section below stands on its own. You can:
-- Skim for a high-level understanding, **or**
-- Follow along in the Editor and reproduce the examples exactly.
+Exploration approfondie des fonctionnalités principales.
 
 ---
 
-## Response Strategies (Pagination & Variations)
+## Disposition de la fenêtre de l'éditeur
 
-When the same endpoint is called multiple times, you can control **which response** is returned on each call.
+Ouvrir : `Window > CodeCarnage > API Mocking Toolkit`
 
-Think of it like a playlist:
-- **Sequential** – Play in order, loop at the end
-- **RoundRobin** – Cycle through responses evenly
-- **Random** – Shuffle mode
-- **Weighted** – Some responses more likely than others
+**Trois onglets :** Endpoints (collections/dossiers/éditeur), Sessions (enregistrements/lecture), Environnements (sélecteurs/variables/import/export)
 
-### Real Example: Shop Pagination
+**Panneau gauche :** sélecteur de collection, arborescence de dossiers, liste d'endpoints, bouton **+ Endpoint**.
+**Panneau droit :** Mock (sous-onglets Succès/Erreur avec Corps/En-têtes) et Réponse (visionneuse en direct, boutons de capture).
+**Panneau de requête :** méthode, URL, En-têtes/Corps, bouton Envoyer. La puce d'indication des variables liste les `{{variable}}`s disponibles.
+**Barre d'outils :** Activé, Mode hors ligne, menu déroulant de collection, Import/Export (OpenAPI 3.0 + `x-amt-*`).
 
-You have a shop endpoint: `GET /api/shop/items`.
-Backend returns 30 items total, 10 per page.
+---
 
-**Setup in API Mocking Toolkit:**
+## Stratégies de réponse
 
-1. Create endpoint: `GET /api/shop/items`
-2. Add 3 responses:
+Contrôlez quelle réponse est renvoyée à chaque appel :
+- **Séquentielle** – Lecture dans l'ordre ; boucle selon l'indicateur `LoopResponses`
+- **RoundRobin** – Cycle infini
+- **Aléatoire** – Aléatoire uniforme
 
-**Response 1 (Page 1):**
+### Exemple de pagination de boutique
+
+Endpoint : `GET /api/shop/items` retourne 30 articles, 10 par page.
+
+Configuration : Créez l'endpoint `GET /api/shop/items` avec 3 réponses :
+
+**Réponse 1 (Page 1) :**
 ```json
 {
   "items": [
@@ -46,7 +48,7 @@ Backend returns 30 items total, 10 per page.
 }
 ```
 
-**Response 2 (Page 2):**
+**Réponse 2 (Page 2) :**
 ```json
 {
   "items": [
@@ -59,7 +61,7 @@ Backend returns 30 items total, 10 per page.
 }
 ```
 
-**Response 3 (Page 3):**
+**Réponse 3 (Page 3) :**
 ```json
 {
   "items": [
@@ -72,376 +74,229 @@ Backend returns 30 items total, 10 per page.
 }
 ```
 
-3. Set **Response Strategy** to `Sequential`.
-
-**In code:**
+Définissez la stratégie de réponse sur **Séquentielle**. Dans le code :
 
 ```csharp
-// Your game code
+// Votre code de jeu
 for (int page = 1; page <= 5; page++)
 {
-    var response = await ApiClient.GetAsync("/api/shop/items");
+    var response = await ApiClient.Get("/api/shop/items");
     var data = JsonUtility.FromJson<ShopData>(response.Body);
 
-    Debug.Log($"Page {page}: {data.items.Length} items");
+    Debug.Log($"Page {page}: {data.items.Length} articles");
 }
 
-// Output:
-// Page 1: 10 items (Response 1)
-// Page 2: 10 items (Response 2)
-// Page 3: 10 items (Response 3)
-// Page 4: 10 items (Response 1 - looped!)
-// Page 5: 10 items (Response 2)
+// Sortie (avec LoopResponses = true) :
+// Page 1: 10 articles (Réponse 1)
+// Page 2: 10 articles (Réponse 2)
+// Page 3: 10 articles (Réponse 3)
+// Page 4: 10 articles (Réponse 1 - bouclé !)
+// Page 5: 10 articles (Réponse 2)
 ```
 
-✅ **Result:** Your pagination logic is tested thoroughly, with **zero** backend coordination.
+Pagination testée sans coordination avec le backend.
 
-### Strategy Summary
+**Stratégies :**
+- Séquentielle : 1 → 2 → 3 → (boucle ou arrêt)
+- RoundRobin : 1 → 2 → 3 → 1 → 2 → 3 (cycle permanent)
+- Aléatoire : 2 → 1 → 3 → 2 → 2 → 1
 
-| Strategy      | Behavior                                    | Use Case                             |
-|--------------|---------------------------------------------|--------------------------------------|
-| Sequential   | 1 → 2 → 3 → 1 → 2 → 3                       | Pagination, multi-step flows         |
-| RoundRobin   | Evenly cycles 1 → 2 → 3 → 1 → 2 → 3         | Load-balancing simulations           |
-| Random       | Random response each call                   | Varied gameplay testing              |
-| Weighted     | Uses weights (e.g. 90% success, 10% error)  | Realistic success/error distributions|
-
-```text
-Sequential:  1 → 2 → 3 → 1 → 2 → 3
-RoundRobin:  1 → 2 → 3 → 1 → 2 → 3
-Random:      2 → 1 → 3 → 2 → 2 → 1
-Weighted:    ✓ → ✓ → ✗ → ✓ → ✓ → ✓
-```
+Pour un mélange « surtout succès, parfois erreur », utilisez la stratégie `Aléatoire` avec `Responses[]` et `ErrorResponses[]`.
 
 ---
 
-## Offline Mode (Work Completely Offline)
+## Mode hors ligne et basculement de mock par endpoint
 
-Global toggle to mock **all** API calls, even when an endpoint isn’t configured.
+Le **Mode hors ligne** global (`ApiGlobalConfig`) et le basculement **Mock activé** par endpoint (`UseMock`) contrôlent le routage.
 
-### How It Works
+**Ordre de routage :**
+1. `ApiGlobalConfig.Enabled` OFF → backend réel (toolkit contourné)
+2. `OfflineMode` ON → tout mocké (ou échec si aucun endpoint ne correspond)
+3. `OfflineMode` OFF + endpoint correspondant + `UseMock` ON → mocké
+4. Sinon → réseau réel
 
-- **Offline Mode OFF (default):**
-  - Configured endpoints → Mock response
-  - Unconfigured endpoints → Real network request
+Le basculement par endpoint permet de conserver un endpoint configuré tout en routant vers le backend réel — utile pour capturer des réponses en direct ou faire des tests A/B.
 
-- **Offline Mode ON:**
-  - Configured endpoints → Mock response
-  - Unconfigured endpoints → Error (so you don’t accidentally hit real servers)
-
-### Enable Offline Mode
-
-**In Editor:**
+**Activer le mode hors ligne :**
 ```text
-Window > API Mocking Toolkit
-Toggle "Offline Mode" ON
+Window > CodeCarnage > API Mocking Toolkit
+Activer "Mode hors ligne"
 ```
 
-**In Code:**
+**Lire à l'exécution :**
 ```csharp
-ApiGlobalConfig.Instance.OfflineMode = true;
+var config = Resources.Load<ApiGlobalConfig>("ApiGlobalConfig");
+bool offline = config.OfflineMode;
 ```
 
-### Use Cases
-
-✅ **Development without backend**  
-✅ **Testing without flaky networks**  
-✅ **Conference demos / live streams**
+Utilisez pour le développement sans backend, les tests sans réseau instable, les démos en conférence.
 
 ---
 
-## Environments & Variables (Dev / Staging / Prod)
+## Environnements et variables
 
-Manage different backends and configs **without changing your game code**.
+Gérez différents backends sans modifier le code.
 
-### Creating Environments
+Créez des environnements : Développement, Staging, Production. Chacun possède sa propre `baseUrl` et ses propres variables.
 
-1. `Window > CodeCarnage > API Mocking Toolkit`
-2. Click **Environments** tab
-3. Add environments:
-   - Development
-   - Staging
-   - Production
-
-Example environment layout (conceptual):
-
-- Each environment (Dev, QA, Prod EU, Prod NA) defines its own `baseUrl`.
-- `ApiClient` uses the active environment's `baseUrl` to build requests.
-- `ApiClient` can route requests either to mocked responses or the real backend.
-
-Each environment provides its own variable values (like `baseUrl` or `region`), and the active environment controls how `{{baseUrl}}` and other variables resolve at runtime.
-
-### Variable Interpolation
-
-Use `{{variableName}}` in URLs and response bodies.
-
-**Variables at a glance:**
-
-| Scope   | Example variables                                           |
-| ------- | ----------------------------------------------------------- |
-| Global  | `apiKey = abc123`, `userId = player-001`                    |
-| Dev     | `baseUrl = http://localhost:3000`, `region = us-west`      |
-| Prod    | `baseUrl = https://api.mygame.com`, `region = us-east`     |
-
-**URL template:**
-
+**Interpolation de variables dans les URLs et les corps :**
 ```text
-{{baseUrl}}/user/{{userId}}/profile?key={{apiKey}}
+{{baseUrl}}/users/{{userId}}?key={{apiKey}}
 ```
 
-**How it resolves:**
+**Priorité de portée (de la plus haute à la plus basse) :**
+1. Spécifique à l'endpoint
+2. Spécifique à l'environnement
+3. Global
 
-```text
-Dev : http://localhost:3000/user/player-001/profile?key=abc123
-Prod: https://api.mygame.com/user/player-001/profile?key=abc123
-```
-
-### Variable Scope Priority
-
-1. **Endpoint-specific** (highest priority)  
-2. **Environment-specific**  
-3. **Global** (fallback)
-
-### Code Example
-
+**Changer à l'exécution :**
 ```csharp
-// Switch environments at runtime
 EnvironmentManager.Instance.ActiveEnvironment = devEnvironment;
-
-// Same code, different URLs based on environment
-var response = await ApiClient.GetAsync("{{baseUrl}}/user/profile");
+var response = await ApiClient.Get("{{baseUrl}}/users/{{userId}}?key={{apiKey}}");
 ```
 
-✅ No hardcoded URLs. Switch environments with a dropdown or one line of code.
+Les variables non résolues lèvent une `MissingEnvironmentVariableException`. Aucune URL codée en dur.
 
-### Production Build Safety
+### Sécurité des builds de production
 
-**⚠️ Important: Environment restrictions for production builds**
+`BuildPreprocessor` s'exécute avant les builds. Vérifications :
+1. `OfflineMode` doit être OFF
+2. `BuildEnvironmentId` doit pointer vers un environnement enregistré
+3. L'environnement actif doit correspondre à l'environnement de build
 
-The toolkit enforces strict rules when creating Unity builds to prevent accidentally deploying with the wrong environment configuration.
+**Gérer les environnements :** `Window > CodeCarnage > API Mocking Toolkit > Gérer les environnements`
+- **ÉDITEUR :** environnement actif pour le mode Play (changez librement)
+- **BUILD :** environnement compilé dans les builds (un seul)
 
-**Radio Button UI:**
+Les violations font échouer le build avec `BuildFailedException`.
 
-Each environment has a radio button (●) that controls whether it's allowed in production builds:
-- ✅ **One environment** must have the radio button selected (green fill)
-- ❌ **No other environments** can be selected at the same time
-- This is the environment that will be compiled into your production build
-
-**Play Mode vs Unity Build:**
-
-| Mode | Restriction | Purpose |
-|------|-------------|---------|
-| **Play Mode (▶️)** | None - use any environment | Local testing and development |
-| **Unity Build** | Exactly ONE environment with "Allow in Build" enabled | Production deployment safety |
-
-**What happens if you don't follow the rules:**
-
-If you try to build (`File > Build`) without exactly one environment marked for builds:
-- ❌ Build fails with clear error message
-- ❌ Example: "Build failed: 3 environments are marked for builds. Only one is allowed."
-- ❌ Example: "Build failed: Active environment 'Development' is not marked for builds."
-
-**How to change which environment is used for builds:**
-
-1. Open "Manage Environments" dialog
-2. Click the radio button next to your production environment
-3. All other environments automatically become un-selected
-4. Only the selected environment will be compiled into Unity builds
-
-**Why this restriction exists:**
-
-- Prevents accidentally shipping dev/staging environment in production
-- Forces you to explicitly choose which environment to deploy
-- Ensures production builds only include production-safe variables
-- Protects against configuration mistakes that could expose dev servers
-
-**Best Practice:**
-
-```text
-Development   ○ (not for builds)  → baseUrl = http://localhost:3000
-Staging       ○ (not for builds)  → baseUrl = https://staging.api.mygame.com
-Production    ● (marked for builds) → baseUrl = https://api.mygame.com
-```
-
-Only "Production" will be included when you run `File > Build`.
+**Bonne pratique :** Développement (Dev), Staging (QA), Production (Build). Seul l'environnement BUILD est livré.
 
 ---
 
-## Collections & Folders (Organize Large Projects)
+## Collections et dossiers
 
-Keep hundreds of endpoints manageable with **Collections** and **Folders**.
+Organisez des centaines d'endpoints.
 
-### Collections
+**Collections :** groupes d'endpoints séparés (jeux, versions d'API). Une seule active à la fois via `ApiGlobalConfig.ActiveCollectionName`.
 
-- Separate groups of endpoints (e.g., different games or API versions)
-- One collection active at a time
+Créer : Clic droit dans la fenêtre Projet → `Create > CodeCarnage > API Mocking Toolkit > Endpoint Collection`.
 
-**Create a Collection:**
-```text
-Assets > Create > API Mocking Toolkit > API Endpoint Collection
-```
+**Dossiers :** organisez les endpoints dans une collection (Authentification, Données joueur, Classement).
 
-Use the collection dropdown in the window to switch between them.
-
-### Folders
-
-Organize endpoints inside a collection:
-
-```text
-📁 Authentication
-  └─ POST /login
-  └─ POST /register
-  └─ POST /logout
-
-📁 Player Data
-  └─ GET /player/profile
-  └─ POST /player/save
-  └─ GET /player/inventory
-
-📁 Leaderboard
-  └─ GET /leaderboard/global
-  └─ GET /leaderboard/friends
-```
-
-**Best Practices:**
-- Use **Collections** for: different games, API versions, or major test suites
-- Use **Folders** for: features (Auth, Shop) or services (User, Game, Social)
+Bonnes pratiques : Utilisez les **Collections** pour les jeux/versions/suites de tests. Utilisez les **Dossiers** pour les fonctionnalités/services.
 
 ---
 
-## Session Management (Time-Travel Debugging)
+## Gestion des sessions
 
-⭐ **UNIQUE FEATURE – Replay entire play sessions.**
+Enregistrez toutes les requêtes API en mode Play, sauvegardez, rejouez plus tard.
 
-Record all API requests during Play Mode, save them, and replay later.
+**Enregistrement :** Activez la **persistance de session** sur `ApiGlobalConfig` → mode Play → appels auto-enregistrés → quitter → sauvegardé dans `Application.persistentDataPath/ApiMockingToolkitSessions/`.
 
-### Recording
+**Bannière REC :** Cliquez sur **Arrêter** pour terminer la session sans quitter le mode Play (utile pour découper les longues sessions). La bannière se masque automatiquement quand inactive.
 
-1. Enable session persistence in Global Config  
-2. Enter Play Mode  
-3. All API calls are automatically recorded  
-4. Exit Play Mode → Session saved to disk
+**Lecture :** Onglet Sessions → sélectionnez une session → Charger la session → examinez les requêtes/réponses.
 
-```csharp
-// Enable session persistence
-ApiGlobalConfig.Instance.EnableSessionPersistence = true;
+Utilisez pour la reproduction de bugs, l'analyse de goulots d'étranglement de performance, le partage en équipe. Éditeur uniquement (non compilé dans les builds). Maximum 1 000 sessions conservées ; les plus anciennes sont supprimées automatiquement.
 
-// Set max sessions to keep
-ApiGlobalConfig.Instance.MaxSavedSessions = 20;
-```
-
-### Replaying
-
-1. `Window > API Mocking Toolkit > Sessions` tab  
-2. Select a past session  
-3. Click **Load Session**  
-4. Review all requests/responses
-
-**Use Cases:**
-- Reproduce long, complex bugs
-- Share exact failing sessions with teammates
-- Analyze performance bottlenecks
+**Cas d'usage :** Bugs longs et complexes ; scénarios d'échec exacts ; analyse de performance.
 
 ---
 
-## OpenAPI Integration (Work with Backend Teams)
+## Intégration OpenAPI
 
-Import/export OpenAPI (Swagger) specs for real collaboration.
+**Import :** Toolkit → Import → sélectionnez `.json` ou `.yaml` → endpoints créés automatiquement
 
-### Importing
-
-1. `Window > API Mocking Toolkit`
-2. Click **Import**
-3. Select `.json` or `.yaml` OpenAPI file
-4. Endpoints are created automatically
-
+Exemple OpenAPI :
 ```yaml
 openapi: 3.0.0
 paths:
   /users:
     get:
-      summary: Get all users
+      summary: Obtenir tous les utilisateurs
       responses:
         '200':
-          description: Success
+          description: Succès
 ```
 
-**Result:** Endpoint created with URL, method, and a default 200 response.
+Résultat : endpoint créé avec URL, méthode, réponse 200.
 
-### Variable Conversion
+**Conversion de variables :** OpenAPI `{variable}` → Toolkit `{{variable}}`
 
-OpenAPI uses `{variable}`, API Mocking Toolkit uses `{{variable}}`.
+**Export :** Configurez les endpoints → Export → sauvegardez `.json` → envoyez au backend
 
-```text
-OpenAPI:  /users/{userId}/profile
-Imported: /users/{{userId}}/profile
-```
-
-### Exporting
-
-1. Configure endpoints in API Mocking Toolkit  
-2. Click **Export**  
-3. Save `.json` file  
-4. Send to backend team – they implement to that spec
-
-```text
-Export → Import → Export = Same file (round-trip safe)
-```
+Aller-retour sûr : Export → Import → Export = même fichier. Les données spécifiques au toolkit (dossiers, stratégies, latence, réponses multiples) sont préservées via les extensions `x-amt-*`. Les outils backend ignorent les extensions, utilisent OpenAPI 3.0 standard.
 
 ---
 
-## Error Simulation (Test Failure Paths Safely)
+## Simulation d'erreurs
 
-Test error and latency handling **without** breaking real backends.
+Testez la gestion des erreurs et de la latence sans casser les backends réels.
 
-### Simulating Errors & Latency
-
-1. Add endpoint: `GET /api/data`  
-2. Add one or more error responses (4xx/5xx)  
-3. Optionally set **Latency** (for example 100 ms, 1 s, 5 s) on a response to simulate slow or timing‑out backends and to exercise loading bars, spinners, and other async UI behaviours.
+Ajoutez un endpoint → ajoutez des réponses d'erreur (4xx/5xx) → définissez la latence (ms) sur la réponse :
 
 ```json
 {
   "status": 500,
-  "error": "Internal Server Error"
+  "error": "Erreur interne du serveur"
 }
 ```
 
-Or configure multiple responses (including different status codes and latencies) with a **Weighted** strategy:
-
+Utilisez `ErrorResponses[]` avec la stratégie `Aléatoire` pour des échecs occasionnels, ou `Séquentielle` pour un comportement déterministe :
 ```text
-Response 1 (Success 200)   - Weight: 80
-Response 2 (Error 500)     - Weight: 15
-Response 3 (Error 404)     - Weight: 5
+Responses[]:        Succès 200 (latence 100 ms)
+ErrorResponses[]:   Erreur  500 (latence 1500 ms)
+                    Erreur  404 (latence 100 ms)
 ```
 
-**Latency use cases:**
+**Cas d'usage de la latence :** visibilité des barres de chargement, UX lente-mais-réussie, mauvaises conditions réseau (mobile, coupures Wi-Fi).
 
-- Make sure loading bars/spinners stay visible for the whole request and disappear only when a response arrives.
-- Test UX for **slow but successful** calls (e.g., show "Still loading…" or allow the player to cancel).
-- Simulate poor network conditions (mobile, Wi‑Fi drops) by mixing fast and slow responses in the same endpoint.
-
-### Handling Errors in Code
-
+Gérez dans le code :
 ```csharp
-var response = await ApiClient.GetAsync("/api/data");
-
-if (!response.Success)
-{
-    switch (response.StatusCode)
-    {
-        case 401:
-            ShowLoginScreen();
-            break;
-        case 429:
-            ShowRateLimitMessage();
-            break;
-        case 500:
-            ShowErrorDialog("Server error, please try again");
-            break;
+var response = await ApiClient.Get("/api/data");
+if (!response.Success) {
+    switch (response.StatusCode) {
+        case 401: ShowLoginScreen(); break;
+        case 429: ShowRateLimitMessage(); break;
+        case 500: ShowErrorDialog("Erreur serveur"); break;
     }
 }
 ```
 
-✅ This lets you reliably test **all** your error paths.
-
 ---
+
+## Capture des réponses API en direct
+
+Faites le pont entre les APIs réelles et le développement mocké.
+
+**Configuration :** Configurez l'endpoint avec l'URL réelle → désactivez le mode hors ligne → Cliquez sur « Envoyer ».
+
+**Capture :** Après réception de la réponse, cliquez sur « Sauvegarder le corps comme mock de succès » ou « Sauvegarder le corps comme mock d'erreur » (onglet Corps) / « Sauvegarder les en-têtes comme... » (onglet En-têtes).
+
+**Options du menu :**
+- Ajouter comme nouvelle réponse
+- Remplacer toutes les réponses
+- Remplacer une réponse spécifique par son nom
+
+**Personnaliser :** Nom de la réponse, code de statut, latence (ms), corps, en-têtes. Tout pré-rempli depuis la capture. Cliquez sur Confirmer.
+
+Le toolkit active automatiquement `UseMock`, prêt à utiliser hors ligne.
+
+**Exemple :**
+```csharp
+// Config : https://api.mygame.com/leaderboard/global, Mode hors ligne OFF
+var response = await ApiClient.Get("https://api.mygame.com/leaderboard/global");
+
+// Dans l'éditeur : Cliquez sur "Sauvegarder le corps comme mock de succès" → Nom : "Classement Production"
+// Activez le mode hors ligne → réponse en cache utilisée, aucun appel réseau
+var cachedResponse = await ApiClient.Get("https://api.mygame.com/leaderboard/global");
+```
+
+**Cas d'usage :** Tester les données de staging hors ligne, reproduire les bugs de production, constituer des bibliothèques d'erreurs, tests de performance, partage en équipe.
+
+**Support des variables :** Modifiez la réponse capturée pour utiliser `{{baseUrl}}`, `{{apiKey}}` au lieu de valeurs codées en dur. Changez d'environnement sans modifier les mocks.
+
+**Prévention :** Dialogues de confirmation pour les actions destructives (Remplacer tout / Remplacer spécifique).
+
+**Bonnes pratiques :** Nommez les réponses de façon descriptive (« Profil utilisateur - Niveau Premium »). Capturez les erreurs intentionnellement (401, 404, 500). Utilisez la latence pour tester les spinners/timeouts. Combinez avec les stratégies de réponse. Versionnez les collections via Git.

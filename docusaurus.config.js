@@ -17,12 +17,13 @@ const config = {
 
 	i18n: {
 	  defaultLocale: 'en',
-	  locales: ['en', 'fr', 'zh-Hans', 'ja'],
+	  locales: ['en', 'fr', 'zh-Hans', 'ja', 'ko'],
 	  localeConfigs: {
 	    en: { label: 'English', htmlLang: 'en' },
 	    fr: { label: 'Français', htmlLang: 'fr' },
 	    'zh-Hans': { label: '简体中文', htmlLang: 'zh-Hans' },
 	    ja: { label: '日本語', htmlLang: 'ja' },
+	    ko: { label: '한국어', htmlLang: 'ko' },
 	  },
 	},
 
